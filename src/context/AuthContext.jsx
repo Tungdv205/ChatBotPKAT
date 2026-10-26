@@ -5,7 +5,7 @@ import { addDays, dkey } from '../utils/helpers.js'
 // Khi có backend, chỉ cần thay các hàm login/register/resetPassword/logout
 // bên dưới bằng lời gọi API; các màn hình không phải sửa.
 
-const KEY = 'hengio.demo.v2'
+export const KEY = 'hengio.demo.v2'
 
 function seedDemo(db) {
   if (db.users['demo@henlich.vn']) return db
@@ -35,7 +35,7 @@ function seedDemo(db) {
   return db
 }
 
-function loadDb() {
+export function loadDb() {
   let db = { users: {}, session: null }
   try {
     const raw = localStorage.getItem(KEY)

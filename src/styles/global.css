@@ -346,3 +346,27 @@ details.faq p{padding-bottom:14px;color:var(--muted)}
     grid-template-columns: 1fr !important; /* Màn hình nhỏ tự động về 1 cột */
   }
 }
+
+/* quản trị */
+.admin-tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}
+.admin-tabs .chip{flex:none}
+@media(min-width:900px){.admin-tabs{display:none}}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px}
+.kpi{display:grid;gap:4px;align-content:start}
+.kpi small{color:var(--muted);font-size:13px;font-weight:600}
+.kpi b{font-family:var(--font-display);font-size:28px;font-variant-numeric:tabular-nums;line-height:1.15;overflow-wrap:anywhere}
+.kpi span{font-size:13px;color:var(--muted)}
+.bars{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;align-items:end}
+.bar{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:170px}
+.bar i{display:block;width:100%;max-width:40px;border-radius:8px 8px 4px 4px;background:var(--accent)}
+.bar b{font-size:13px;font-variant-numeric:tabular-nums}
+.bar small{color:var(--muted);font-size:12px;line-height:1.2}
+.hbar{display:grid;gap:5px}
+.hbar .t{height:8px;border-radius:4px;background:var(--surface-2)}
+.hbar .t i{display:block;height:100%;border-radius:4px;background:var(--accent)}
+.tblwrap{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;color:var(--muted);font-weight:600;font-size:13px;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr:last-child td{border-bottom:0}
+a.btn{text-decoration:none}
