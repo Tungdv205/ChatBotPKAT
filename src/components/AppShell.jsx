@@ -27,11 +27,28 @@ export default function AppShell({ view, onNav, children }) {
   const { user, logout } = useAuth()
   const unread = user.notifs.filter((n) => !n.read).length
   const cur = view === 'success' ? 'appts' : view
+  
+  // Nút tìm kiếm ở thanh trên: mở màn Dịch vụ và đưa con trỏ vào ô tìm
+  const goSearch = () => {
+    onNav('services')
+    setTimeout(() => document.getElementById('q')?.focus(), 60)
+  }
 
   return (
-    <div className="shell">
+        <div className="shell">
+      <header className="topbar">
+        <Logo/>
+              <div className="top-r">
+          <button className="iconbtn" onClick={goSearch} aria-label="Tìm dịch vụ" title="Tìm dịch vụ">
+            <Icon name="search" />
+          </button>
+          <button className="iconbtn" onClick={() => onNav('notifs')} aria-label="Thông báo">
+            <Icon name="bell" />
+            {unread > 0 && <span className="badge">{unread}</span>}
+          </button>
+        </div>
+      </header>
       <aside className="side">
-        <Logo />
         <nav className="snav" aria-label="Menu chính">
           {NAV.map(([id, label, ic]) => (
             <button
@@ -62,15 +79,12 @@ export default function AppShell({ view, onNav, children }) {
       </aside>
 
       <div className="col">
-        <header className="topbar">
-          <Logo />
-          <div className="top-r">
-            <button className="iconbtn" onClick={() => onNav('notifs')} aria-label="Thông báo">
-              <Icon name="bell" />
-              {unread > 0 && <span className="badge">{unread}</span>}
-            </button>
-          </div>
-        </header>
+        <main className="main">
+          <div className="main-in">{children}</div>
+        </main>
+      </div>
+
+      <div className="col">
         <main className="main">
           <div className="main-in">{children}</div>
         </main>

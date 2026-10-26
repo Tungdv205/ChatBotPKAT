@@ -90,7 +90,7 @@ export function AuthProvider({ children }) {
         settings: { remind: true, promo: true },
         appts: [],
         notifs: [
-          { id: 'n' + now, t: 'system', title: 'Chào mừng đến Phòng khám đa khoa Anh Thu', body: 'Tài khoản của bạn đã sẵn sàng. Bấm Đặt lịch để chọn dịch vụ và bác sĩ.', ts: now, read: false },
+          { id: 'n' + now, t: 'system', title: 'Chào mừng đến Phòng khám đa khoa Anh Thu', body: 'Tài khoản của bạn đã sẵn sàng. Bấm Đặt lịch để chọn dịch vụ và giờ khám.', ts: now, read: false },
           { id: 'n' + (now + 1), t: 'promo', title: 'Quà chào bạn mới', body: 'Dùng mã CHAOBAN giảm 30.000đ cho lịch hẹn từ 150.000đ.', ts: now, read: false },
         ],
       }

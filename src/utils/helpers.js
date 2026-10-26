@@ -34,3 +34,14 @@ export const norm = (s) =>
 
 export const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 export const phoneRe = /^(0|\+84)\d{9}$/
+
+// "5 phút trước", "2 ngày trước"... từ mốc thời gian (ms)
+export const relTime = (ts) => {
+  const s = (Date.now() - ts) / 1000
+  if (s < 60) return 'Vừa xong'
+  if (s < 3600) return Math.floor(s / 60) + ' phút trước'
+  if (s < 86400) return Math.floor(s / 3600) + ' giờ trước'
+  if (s < 7 * 86400) return Math.floor(s / 86400) + ' ngày trước'
+  const d = new Date(ts)
+  return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear()
+}

@@ -6,6 +6,10 @@ import ChatWidget from './components/ChatWidget.jsx'
 import Login from './pages/Login.jsx'
 import Home from './pages/Home.jsx'
 import Services from './pages/Services.jsx'
+import Promos from './pages/Promos.jsx'
+import Notifications from './pages/Notifications.jsx'
+import Profile from './pages/Profile.jsx'
+import Support from './pages/Support.jsx'
 import Booking from './pages/Booking.jsx'
 import BookingSuccess from './pages/BookingSuccess.jsx'
 import Appointments from './pages/Appointments.jsx'
@@ -33,7 +37,6 @@ export default function App() {
     setView(v)
     window.scrollTo({ top: 0 })
   }
-
   // Các hành động mà màn hình có thể gọi
   const app = {
     go,
@@ -83,8 +86,18 @@ export default function App() {
             <Services app={app} preset={svcPreset} />
           ) : view === 'book' ? (
             <Booking app={app} preset={bookingPreset} />
-             ) : view === 'appts' ? (
+                       ) : view === 'appts' ? (
             <Appointments app={app} />
+          ) : view === 'promos' ? (
+            <Promos app={app} />
+          ) : view === 'notifs' ? (
+            <Notifications />
+              ) : view === 'notifs' ? (
+            <Notifications />
+          ) : view === 'profile' ? (
+            <Profile />
+          ) : view === 'support' ? (
+            <Support tab={supTab} onTab={setSupTab} />
           ) : view === 'success' ? (
             <BookingSuccess app={app} apptId={lastApptId} />
           ) : (

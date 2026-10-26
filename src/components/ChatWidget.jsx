@@ -19,7 +19,7 @@ function botReply(raw) {
   if (has(/huy|doi lich|doi gio|doi hen/))
     return { text: 'Bạn đổi hoặc hủy miễn phí trước giờ hẹn ít nhất 2 giờ, trong mục Lịch hẹn của tôi. Sát giờ hơn, vui lòng gọi hotline.', actions: [{ l: 'Mở lịch hẹn', a: 'go', v: 'appts' }] }
   if (has(/dat lich|dat hen|lich hen|hen kham|dang ky kham|muon kham/))
-    return { text: 'Bạn chọn dịch vụ, bác sĩ, rồi giờ còn trống. Xác nhận xong là có lịch, thanh toán tại quầy sau khi khám.', actions: [{ l: 'Đặt lịch ngay', a: 'go', v: 'book' }, { l: 'Xem dịch vụ', a: 'go', v: 'services' }] }
+    return { text: 'Bạn chọn dịch vụ, rồi chọn giờ còn trống.. Xác nhận xong là có lịch, thanh toán tại quầy sau khi khám.', actions: [{ l: 'Đặt lịch ngay', a: 'go', v: 'book' }, { l: 'Xem dịch vụ', a: 'go', v: 'services' }] }
   if (has(/gio|mo cua|lam viec|chu nhat|nghi trua/))
     return { text: 'Phòng khám làm việc thứ hai đến thứ bảy, 08:00 đến 18:00, nghỉ trưa 12:00 đến 13:30. Chủ nhật nghỉ.' }
   if (has(/uu dai|ma giam|voucher|khuyen mai|giam gia/))
