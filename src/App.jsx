@@ -6,13 +6,13 @@ import ChatWidget from './components/ChatWidget.jsx'
 import Login from './pages/Login.jsx'
 import Home from './pages/Home.jsx'
 import Services from './pages/Services.jsx'
+import Appointments from './pages/Appointments.jsx'
 import Promos from './pages/Promos.jsx'
 import Notifications from './pages/Notifications.jsx'
 import Profile from './pages/Profile.jsx'
 import Support from './pages/Support.jsx'
 import Booking from './pages/Booking.jsx'
 import BookingSuccess from './pages/BookingSuccess.jsx'
-import Appointments from './pages/Appointments.jsx'
 import Placeholder from './pages/Placeholder.jsx'
 import { canChange } from './utils/appointments.js'
 import { copyText } from './utils/clipboard.js'
@@ -21,8 +21,8 @@ export default function App() {
   const { user } = useAuth()
   const toast = useToast()
   const [view, setView] = useState('home')
-    const [stack, setStack] = useState([]) // các màn đã đi qua, để nút Quay lại dùng
-  const [supTab, setSupTab] = useState('faq') // dùng cho màn Hỗ trợ ở bước sau
+  const [stack, setStack] = useState([]) // các màn đã đi qua, để nút Quay lại dùng
+  const [supTab, setSupTab] = useState('faq')
 
   // Dữ liệu "chuyển tiếp" giữa các màn. Các màn tương ứng sẽ đọc ở các bước sau.
   const [bookingPreset, setBookingPreset] = useState(null) // màn Đặt lịch
@@ -31,14 +31,13 @@ export default function App() {
 
   // Đăng xuất thì lần đăng nhập sau quay về Trang chủ
   useEffect(() => {
-       if (!user) {
+    if (!user) {
       setView('home')
       setStack([])
     }
   }, [user])
 
   const go = (v) => {
-     const go = (v) => {
     // Nhớ màn hiện tại để quay lại. Không nhớ màn "thành công", và không nhớ màn đặt lịch khi vừa đặt xong
     if (v !== view && view !== 'success' && !(view === 'book' && v === 'success')) setStack((st) => [...st.slice(-19), view])
     setView(v)
@@ -53,6 +52,7 @@ export default function App() {
     setView(prev)
     window.scrollTo({ top: 0 })
   }
+
   // Các hành động mà màn hình có thể gọi
   const app = {
     go,
@@ -70,7 +70,7 @@ export default function App() {
     },
     reschedule: (a) => {
       if (!canChange(a)) return toast('Còn dưới 2 giờ nên không thể đổi lịch trực tuyến. Hãy gọi hotline.')
-           app.startBooking({ svc: a.svc, editId: a.id, note: a.note, step: 2 })
+      app.startBooking({ svc: a.svc, editId: a.id, note: a.note, step: 2 })
     },
     clearSvcPreset: () => setSvcPreset({ cat: 'all', detail: null }),
     clearBookingPreset: () => setBookingPreset(null),
@@ -95,20 +95,18 @@ export default function App() {
   return (
     <>
       {user ? (
-               <AppShell view={view} onNav={go} canBack={stack.length > 0} onBack={goBack}>
+        <AppShell view={view} onNav={go} canBack={stack.length > 0} onBack={goBack}>
           {view === 'home' ? (
             <Home app={app} />
           ) : view === 'services' ? (
             <Services app={app} preset={svcPreset} />
           ) : view === 'book' ? (
             <Booking app={app} preset={bookingPreset} />
-                       ) : view === 'appts' ? (
+          ) : view === 'appts' ? (
             <Appointments app={app} />
           ) : view === 'promos' ? (
             <Promos app={app} />
           ) : view === 'notifs' ? (
-            <Notifications />
-              ) : view === 'notifs' ? (
             <Notifications />
           ) : view === 'profile' ? (
             <Profile />

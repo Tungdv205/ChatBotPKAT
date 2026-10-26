@@ -178,7 +178,7 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);
 .scard{display:grid;gap:10px;align-content:start}
 .scard .top{display:flex;gap:12px;align-items:flex-start}
 .scard h3{font-size:16px;line-height:1.3}
-.scard .d{color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.scard .d{color:var(--muted);font-size:14px;display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;;-webkit-box-orient:vertical;overflow:hidden}
 .scard .foot{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .ci{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;flex:none;background:var(--accent-soft);color:var(--accent-text)}
 .rate{display:inline-flex;align-items:center;gap:4px;font-weight:600;font-size:14px}
