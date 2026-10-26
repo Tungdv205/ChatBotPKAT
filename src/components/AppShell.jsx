@@ -23,7 +23,7 @@ const BOTTOM = [
   ['profile', 'Tài khoản', 'user'],
 ]
 
-export default function AppShell({ view, onNav, children }) {
+export default function AppShell({ view, onNav, canBack, onBack, children }) {
   const { user, logout } = useAuth()
   const unread = user.notifs.filter((n) => !n.read).length
   const cur = view === 'success' ? 'appts' : view
@@ -37,7 +37,14 @@ export default function AppShell({ view, onNav, children }) {
   return (
         <div className="shell">
       <header className="topbar">
-        <Logo/>
+                <div className="top-l">
+          {canBack && (
+            <button className="iconbtn" onClick={onBack} aria-label="Quay lại" title="Quay lại">
+              <Icon name="chevl" />
+            </button>
+          )}
+          <Logo />
+        </div>
               <div className="top-r">
           <button className="iconbtn" onClick={goSearch} aria-label="Tìm dịch vụ" title="Tìm dịch vụ">
             <Icon name="search" />

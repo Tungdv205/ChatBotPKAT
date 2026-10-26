@@ -21,6 +21,7 @@ export default function App() {
   const { user } = useAuth()
   const toast = useToast()
   const [view, setView] = useState('home')
+    const [stack, setStack] = useState([]) // các màn đã đi qua, để nút Quay lại dùng
   const [supTab, setSupTab] = useState('faq') // dùng cho màn Hỗ trợ ở bước sau
 
   // Dữ liệu "chuyển tiếp" giữa các màn. Các màn tương ứng sẽ đọc ở các bước sau.
@@ -30,11 +31,26 @@ export default function App() {
 
   // Đăng xuất thì lần đăng nhập sau quay về Trang chủ
   useEffect(() => {
-    if (!user) setView('home')
+       if (!user) {
+      setView('home')
+      setStack([])
+    }
   }, [user])
 
   const go = (v) => {
+     const go = (v) => {
+    // Nhớ màn hiện tại để quay lại. Không nhớ màn "thành công", và không nhớ màn đặt lịch khi vừa đặt xong
+    if (v !== view && view !== 'success' && !(view === 'book' && v === 'success')) setStack((st) => [...st.slice(-19), view])
     setView(v)
+    window.scrollTo({ top: 0 })
+  }
+
+  // Nút Quay lại ở thanh trên: về màn trước đó
+  const goBack = () => {
+    const prev = stack[stack.length - 1]
+    if (!prev) return
+    setStack(stack.slice(0, -1))
+    setView(prev)
     window.scrollTo({ top: 0 })
   }
   // Các hành động mà màn hình có thể gọi
@@ -79,7 +95,7 @@ export default function App() {
   return (
     <>
       {user ? (
-        <AppShell view={view} onNav={go}>
+               <AppShell view={view} onNav={go} canBack={stack.length > 0} onBack={goBack}>
           {view === 'home' ? (
             <Home app={app} />
           ) : view === 'services' ? (
