@@ -95,6 +95,11 @@ export default function AppointmentCard({ appt, confirming, on }) {
         </span>
       </div>
       {appt.note && <p className="hint">Ghi chú: {appt.note}</p>}
+            {appt.cancelledBy === 'clinic' && (
+        <p className="hint" style={{ color: 'var(--bad-text)' }}>
+          Phòng khám đã hủy lịch này{appt.cancelReason ? '. Lý do: ' + appt.cancelReason : '.'}
+        </p>
+      )}
       <div className="meta">
         <span className="price" style={{ color: 'var(--ink)' }}>{vnd(appt.total)}</span>
         {appt.code && <span className="pill pill-sun">{appt.code}</span>}

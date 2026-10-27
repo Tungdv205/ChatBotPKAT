@@ -18,10 +18,11 @@ const PILL = {
 }
 
 // Hộp thoại chi tiết một lịch hẹn
-function Detail({ id, onClose }) {
+function Detail({ id, startCancel, onClose }) {
   const { appts, svcOf, staffOf, staff, updateAppt } = useAdmin()
   const toast = useToast()
-  const [confirmCancel, setConfirmCancel] = useState(false)
+  const [confirmCancel, setConfirmCancel] = useState(!!startCancel)
+  const [reason, setReason] = useState('')
   const a = appts.find((x) => x.id === id)
   if (!a) return null
 
@@ -69,6 +70,12 @@ function Detail({ id, onClose }) {
           <dt>Ghi chú của khách</dt>
           <dd>{a.note || 'Không có'}</dd>
         </div>
+        {a.cancelReason && (
+          <div>
+            <dt>Lý do hủy</dt>
+            <dd>{a.cancelReason}</dd>
+          </div>
+        )}
         <div>
           <dt>Mã ưu đãi</dt>
           <dd>{a.code ? a.code + ' (-' + vnd(a.discount) + ')' : 'Không dùng'}</dd>
@@ -105,7 +112,14 @@ function Detail({ id, onClose }) {
       {st === 'upcoming' &&
         (confirmCancel ? (
           <div className="confirm-row">
-            <span>Hủy lịch này? Khách sẽ nhận được thông báo.</span>
+            <span>Hủy lịch này? Khách sẽ nhận được thông báo kèm lý do bên dưới.</span>
+            <textarea
+              aria-label="Lý do hủy"
+              placeholder="Lý do hủy gửi cho khách (không bắt buộc), ví dụ: bác sĩ có việc đột xuất"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              style={{ minHeight: 64 }}
+            />
             <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <button className="btn btn-sm btn-line" onClick={() => setConfirmCancel(false)}>
                 Giữ lịch
@@ -114,13 +128,19 @@ function Detail({ id, onClose }) {
                 className="btn btn-sm btn-danger"
                 onClick={() =>
                   act(
-                    { status: 'cancelled' },
-                    { title: 'Phòng khám đã hủy lịch hẹn', body: 'Lịch ' + when + ' đã được hủy. Vui lòng đặt lại hoặc gọi hotline.' },
-                    'Đã hủy lịch hẹn'
+                    { status: 'cancelled', cancelledBy: 'clinic', cancelReason: reason.trim() },
+                    {
+                      title: 'Phòng khám đã hủy lịch hẹn',
+                      body:
+                        'Lịch ' + when + ' đã được phòng khám hủy.' +
+                        (reason.trim() ? ' Lý do: ' + reason.trim().replace(/[.!?\s]+$/, '') + '.' : '') +
+                        ' Vui lòng đặt lại hoặc gọi hotline.',
+                    },
+                    'Đã hủy lịch, khách đã nhận thông báo'
                   )
                 }
               >
-                Hủy lịch
+                Xác nhận hủy lịch
               </button>
             </span>
           </div>
@@ -147,7 +167,7 @@ function Detail({ id, onClose }) {
         <div>
           <button
             className="btn btn-line btn-sm"
-            onClick={() => act({ status: 'upcoming' }, { title: 'Lịch hẹn đã được khôi phục', body: 'Lịch ' + when + ' đã được khôi phục.' }, 'Đã khôi phục lịch')}
+            onClick={() => act({ status: 'upcoming', cancelledBy: null, cancelReason: null }, { title: 'Lịch hẹn đã được khôi phục', body: 'Lịch ' + when + ' đã được khôi phục.' }, 'Đã khôi phục lịch')}
           >
             Khôi phục lịch
           </button>
@@ -163,7 +183,7 @@ export default function AdminAppointments() {
   const [q, setQ] = useState('')
   const [f, setF] = useState('all')
   const [date, setDate] = useState('')
-  const [open, setOpen] = useState(null)
+  const [open, setOpen] = useState(null) // { id, cancel }
 
   const key = norm(q.trim())
   const match = (a) =>
@@ -216,8 +236,10 @@ export default function AdminAppointments() {
                   <th>Dịch vụ</th>
                   <th>Thời gian</th>
                   <th>Bác sĩ</th>
+                  <th>Ghi chú của khách</th>
                   <th className="num">Thanh toán</th>
                   <th>Trạng thái</th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody>
@@ -226,7 +248,7 @@ export default function AdminAppointments() {
                   return (
                     <tr key={a.id}>
                       <td style={{ whiteSpace: 'nowrap' }}>
-                        <button className="rowbtn" onClick={() => setOpen(a.id)}>
+                        <button className="rowbtn" onClick={() => setOpen({ id: a.id })}>
                           {a.id}
                         </button>
                       </td>
@@ -242,9 +264,22 @@ export default function AdminAppointments() {
                         <small className="hint">{longDate(a.date)}</small>
                       </td>
                       <td>{staffOf(a.staff)?.name || '—'}</td>
+                      <td style={{ minWidth: 170, maxWidth: 260 }}>
+                        {a.note ? <span className="clamp">{a.note}</span> : <small className="hint">Không có</small>}
+                      </td>
                       <td className="num price">{vnd(a.total)}</td>
                       <td>
                         <span className={'pill ' + pc}>{pt}</span>
+                      </td>
+                      <td style={{ whiteSpace: 'nowrap' }}>
+                        <button className="btn btn-line btn-sm" onClick={() => setOpen({ id: a.id })}>
+                          Chi tiết
+                        </button>{' '}
+                        {eff(a) === 'upcoming' && (
+                          <button className="btn btn-danger btn-sm" onClick={() => setOpen({ id: a.id, cancel: true })}>
+                            Hủy lịch
+                          </button>
+                        )}
                       </td>
                     </tr>
                   )
@@ -257,7 +292,7 @@ export default function AdminAppointments() {
         )}
       </div>
 
-      {open && <Detail id={open} onClose={() => setOpen(null)} />}
+      {open && <Detail key={open.id + (open.cancel ? 'c' : '')} id={open.id} startCancel={open.cancel} onClose={() => setOpen(null)} />}
     </>
   )
 }
