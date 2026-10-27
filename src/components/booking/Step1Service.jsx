@@ -37,7 +37,7 @@ export default function Step1Service({ b, set, onPickSvc }) {
 
       <div className="opts">
         {list.map((s) => {
-                   const on = !!b.svc && b.svc.split('+').includes(s.id)
+          const on = !!b.svc && b.svc.split('+').includes(s.id)
           const c = catById(s.cat)
           return (
             <button key={s.id} className="opt" aria-pressed={on} onClick={() => onPickSvc(s.id)}>
@@ -51,9 +51,9 @@ export default function Step1Service({ b, set, onPickSvc }) {
                 </small>
               </span>
               <span className="price">{vnd(s.price)}</span>
-                          <span className="radio" style={{ borderRadius: 7 }}></span>
-            
-            
+              <span className="radio" style={{ borderRadius: 7 }}></span>
+
+
             </button>
           )
         })}
