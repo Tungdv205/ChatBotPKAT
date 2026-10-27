@@ -27,7 +27,7 @@ export default function AppShell({ view, onNav, canBack, onBack, children }) {
   const { user, logout } = useAuth()
   const unread = user.notifs.filter((n) => !n.read).length
   const cur = view === 'success' ? 'appts' : view
-  
+
   // Nút tìm kiếm ở thanh trên: mở màn Dịch vụ và đưa con trỏ vào ô tìm
   const goSearch = () => {
     onNav('services')
@@ -35,9 +35,9 @@ export default function AppShell({ view, onNav, canBack, onBack, children }) {
   }
 
   return (
-        <div className="shell">
+    <div className="shell">
       <header className="topbar">
-                <div className="top-l">
+        <div className="top-l">
           {canBack && (
             <button className="iconbtn" onClick={onBack} aria-label="Quay lại" title="Quay lại">
               <Icon name="chevl" />
@@ -45,7 +45,7 @@ export default function AppShell({ view, onNav, canBack, onBack, children }) {
           )}
           <Logo />
         </div>
-              <div className="top-r">
+        <div className="top-r">
           <button className="iconbtn" onClick={goSearch} aria-label="Tìm dịch vụ" title="Tìm dịch vụ">
             <Icon name="search" />
           </button>
@@ -84,12 +84,6 @@ export default function AppShell({ view, onNav, canBack, onBack, children }) {
           </button>
         </div>
       </aside>
-
-      <div className="col">
-        <main className="main">
-          <div className="main-in">{children}</div>
-        </main>
-      </div>
 
       <div className="col">
         <main className="main">
