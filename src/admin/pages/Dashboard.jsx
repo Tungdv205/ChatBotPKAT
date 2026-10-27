@@ -1,10 +1,10 @@
 import { useAdmin } from '../AdminContext.jsx'
-import { svcById, staffById, eff, startOf } from '../../utils/appointments.js'
+import { eff, startOf } from '../../utils/appointments.js'
 import { addDays, dkey, longDate, vnd, WDS } from '../../utils/helpers.js'
 
 // Màn Tổng quan: số liệu nhanh, biểu đồ 7 ngày tới, dịch vụ nổi bật, lịch sắp tới
 export default function Dashboard({ go }) {
-  const { admin, appts, customers } = useAdmin()
+  const { admin, appts, customers, svcOf, staffOf } = useAdmin()
   const today = dkey(new Date())
 
   const live = appts.filter((a) => a.status !== 'cancelled')
@@ -100,7 +100,7 @@ export default function Dashboard({ go }) {
               {top.map(([id, n]) => (
                 <div className="hbar" key={id}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 14 }}>
-                    <span>{svcById(id).name}</span>
+                                       <span>{svcOf(id)?.name || id}</span>
                     <b>{n}</b>
                   </div>
                   <div className="t">
@@ -148,7 +148,7 @@ export default function Dashboard({ go }) {
                       <small className="hint">{a.user.phone || a.user.email}</small>
                     </td>
                     <td>
-                      {svcById(a.svc).name}
+                                           {svcOf(a.svc)?.name}
                       <br />
                       <small className="hint">Mã {a.id}</small>
                     </td>
@@ -157,7 +157,7 @@ export default function Dashboard({ go }) {
                       <br />
                       <small className="hint">{longDate(a.date)}</small>
                     </td>
-                    <td>{staffById(a.staff)?.name || '—'}</td>
+                                        <td>{staffOf(a.staff)?.name || '—'}</td>
                     <td className="price">{vnd(a.total)}</td>
                   </tr>
                 ))}

@@ -119,9 +119,14 @@ export default function Support({ tab, onTab }) {
                   <div className="tk" key={x.id}>
                     <div className="r">
                       <b>{x.topic}</b>
-                      <span className="pill pill-accent">{x.status}</span>
+                                          <span className={'pill ' + (x.status === 'Đã xử lý' ? 'pill-ok' : 'pill-accent')}>{x.status}</span>
                     </div>
                     <p className="hint">{x.msg}</p>
+                    {x.reply && (
+                      <p className="hint" style={{ color: 'var(--ink)' }}>
+                        <b>Phòng khám trả lời:</b> {x.reply}
+                      </p>
+                    )}
                     <small className="hint">
                       Mã {x.id} · {relTime(x.ts)}
                     </small>
