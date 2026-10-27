@@ -163,7 +163,11 @@ export function AdminProvider({ children }) {
       services: catalog.services,
       vouchers: catalog.vouchers,
       staff: catalog.staff,
-      svcOf: (id) => catalog.services.find((s) => s.id === id),
+           svcOf: (id) => {
+        const list = String(id).split('+').map((i) => catalog.services.find((s) => s.id === i)).filter(Boolean)
+        if (list.length < 2) return list[0]
+        return { ...list[0], name: list.map((s) => s.name).join(' + '), dur: list.reduce((n, s) => n + s.dur, 0), price: list.reduce((n, s) => n + s.price, 0) }
+      },
       staffOf: (id) => catalog.staff.find((s) => s.id === id),
       catOf: (id) => CATS.find((c) => c.id === id),
       saveCustomers,

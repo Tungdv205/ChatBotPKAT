@@ -20,7 +20,12 @@ function hash(s) {
 }
 
 // Danh sách mã bác sĩ phụ trách chuyên khoa của dịch vụ
-export const eligible = (svc) => STAFF.filter((s) => s.cats.includes(svc.cat)).map((s) => s.id)
+export const eligible = (svc) => {
+  const cats = svc.cats || [svc.cat]
+  const all = STAFF.filter((s) => cats.every((c) => s.cats.includes(c)))
+  // Không có bác sĩ nào phụ trách đủ các chuyên khoa thì lấy bác sĩ phụ trách ít nhất một chuyên khoa
+  return (all.length ? all : STAFF.filter((s) => cats.some((c) => s.cats.includes(c)))).map((s) => s.id)
+}
 
 export function staffBusy(appts, staffId, date, start, dur, exceptId) {
   for (let m = start; m < start + dur; m += 30) {
@@ -79,7 +84,7 @@ export function slotsFor(svc) {
 export function calcDiscount(svc, code) {
   const v = VOUCHERS.find((x) => x.code === code)
   if (!v) return { err: 'Mã không tồn tại hoặc đã hết hạn.' }
-  if (v.cat && svc.cat !== v.cat) return { err: 'Mã này chỉ áp dụng cho ' + catById(v.cat).name + '.' }
+   if (v.cat && !(svc.cats || [svc.cat]).includes(v.cat))
   if (svc.price < v.min) return { err: 'Mã này áp dụng cho đơn từ ' + v.min.toLocaleString('vi-VN') + 'đ.' }
   const d = v.type === 'pct' ? Math.min(Math.round((svc.price * v.val) / 100), v.max) : v.val
   return { d, v }

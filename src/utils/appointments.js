@@ -2,7 +2,28 @@
 import { CATS, SERVICES, STAFF } from '../data/catalog.js'
 import { mins, parseKey } from './helpers.js'
 
-export const svcById = (id) => SERVICES.find((s) => s.id === id)
+// Một lịch có thể gồm nhiều dịch vụ: mã dạng 's1+s12'. Khi đó trả về một "dịch vụ gộp" (cộng thời lượng, cộng giá)
+export const svcById = (id) => {
+  if (!id) return undefined
+  if (!String(id).includes('+')) return SERVICES.find((s) => s.id === id)
+  const items = String(id)
+    .split('+')
+    .map((i) => SERVICES.find((s) => s.id === i))
+    .filter(Boolean)
+  if (!items.length) return undefined
+  return {
+    id,
+    name: items.map((s) => s.name).join(' + '),
+    cat: items[0].cat,
+    cats: [...new Set(items.map((s) => s.cat))],
+    dur: items.reduce((n, s) => n + s.dur, 0),
+    price: items.reduce((n, s) => n + s.price, 0),
+    count: items.length,
+    items,
+    desc: items.map((s) => s.name).join(', '),
+    inc: items.flatMap((s) => s.inc || []),
+  }
+}
 export const staffById = (id) => STAFF.find((s) => s.id === id)
 export const catById = (id) => CATS.find((c) => c.id === id)
 

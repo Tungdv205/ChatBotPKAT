@@ -55,9 +55,15 @@ export default function Booking({ app, preset }) {
     window.scrollTo({ top: 0 })
   }, [step])
 
+   // Bấm dịch vụ: chưa chọn thì thêm, đã chọn thì bỏ chọn. Mã lưu dạng 's1+s12' theo thứ tự danh mục
   const pickSvc = (id) => {
-    if (b.svc === id) return
-    set({ svc: id, date: null, time: null, code: '', codeErr: '' })
+    const cur = b.svc ? b.svc.split('+') : []
+    const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
+    next.sort((x, y) => SERVICES.findIndex((s) => s.id === x) - SERVICES.findIndex((s) => s.id === y))
+    const key = next.join('+')
+    const merged = key ? svcById(key) : null
+    if (merged && merged.dur > 270) return toast('Tổng thời gian tối đa 4 giờ 30 phút cho một lần đặt. Hãy bỏ bớt một dịch vụ hoặc đặt thành lịch khác.')
+    set({ svc: key || null, date: null, time: null, code: '', codeErr: '' })
   }
 
   const confirm = () => {

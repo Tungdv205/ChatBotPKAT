@@ -16,7 +16,7 @@ export default function WizardFooter({ step, editId, svc, canNext, nextLabel, on
       )}
       {svc ? (
         <span className="sum">
-          <b>{svc.name}</b> · {svc.dur} phút · {vnd(svc.price)}
+                   <b>{svc.count > 1 ? svc.count + ' dịch vụ' : svc.name}</b> · {svc.dur} phút · {vnd(svc.price)}
         </span>
       ) : (
         <span className="sum">Chưa chọn dịch vụ</span>
