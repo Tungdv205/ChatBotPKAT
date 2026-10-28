@@ -1,0 +1,21 @@
+# Chạy thử nhanh, KHÔNG cần cài MySQL: dữ liệu nằm trong bộ nhớ, tắt ứng dụng là mất.
+# Chỉ dành cho máy cá nhân. Các khóa dưới đây là khóa thử, tuyệt đối không dùng khi chạy thật.
+spring:
+  datasource:
+    url: jdbc:h2:mem:hengio;MODE=MySQL;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+
+app:
+  jwt-secret: ZGV2LW9ubHktc2VjcmV0LWRvLW5vdC11c2UtaW4tcHJvZHVjdGlvbi0xMjM0NTY3OA==
+  enc-key: ZGV2LW9ubHktZW5jLWtleS0zMi1ieXRlcy0hISEhISE=
+  admin-email: admin@henlich.vn
+  admin-password: Admin@12345
+  seed-demo: true
+  
+logging:
+  level:
+    org.hibernate.SQL: debug
