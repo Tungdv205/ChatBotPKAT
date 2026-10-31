@@ -38,19 +38,20 @@ public class AuthService {
     private static final Duration LOCK_TIME = Duration.ofMinutes(15);
     private static final Duration RESET_TTL = Duration.ofMinutes(30);
     private static final String BAD_LOGIN = "Email hoặc mật khẩu chưa đúng.";
-
     private final UserRepository users;
     private final ResetTokenRepository tokens;
+    private final UserDataCleaner cleaner;
     private final PasswordEncoder encoder;
     private final JwtService jwt;
     private final AppProperties props;
     private final SecureRandom random = new SecureRandom();
     private final String dummyHash; // so khớp giả khi email không tồn tại, để thời gian phản hồi không lộ email nào có tài khoản
 
-    public AuthService(UserRepository users, ResetTokenRepository tokens, PasswordEncoder encoder,
-                       JwtService jwt, AppProperties props) {
+    public AuthService(UserRepository users, ResetTokenRepository tokens, UserDataCleaner cleaner,
+                       PasswordEncoder encoder, JwtService jwt, AppProperties props) {
         this.users = users;
         this.tokens = tokens;
+        this.cleaner = cleaner;
         this.encoder = encoder;
         this.jwt = jwt;
         this.props = props;
@@ -195,6 +196,7 @@ public class AuthService {
             throw ApiException.bad("Mật khẩu chưa đúng.");
         }
         tokens.deleteByUserId(id);
+               cleaner.deleteAll(id);
         users.delete(u);
     }
 

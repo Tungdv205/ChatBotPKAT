@@ -32,7 +32,7 @@ public class Staff {
 
     // Getter/setter: dùng Source Action > Generate Getters and Setters
 
-    public String getId() {
+        public String getId() {
         return id;
     }
 
