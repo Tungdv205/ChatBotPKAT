@@ -14,7 +14,7 @@ const TOPICS = ['Đặt hoặc đổi lịch', 'Kết quả khám', 'Thanh toán
 // Màn Hỗ trợ: câu hỏi thường gặp và gửi yêu cầu cho nhân viên.
 // Chat với trợ lý là nút tròn nổi ở góc màn hình.
 export default function Support({ tab, onTab }) {
-  const { user, updateUser } = useAuth()
+  const { user, addTicket } = useAuth()
   const toast = useToast()
   const cur = tab === 'staff' ? 'staff' : 'faq'
 
@@ -22,31 +22,22 @@ export default function Support({ tab, onTab }) {
   const [msg, setMsg] = useState('')
   const [err, setErr] = useState('')
 
-  const send = (e) => {
+  const [busy, setBusy] = useState(false)
+
+  const send = async (e) => {
     e.preventDefault()
     if (!msg.trim()) return setErr('Nhập nội dung cần hỗ trợ.')
-    const id = 'YC-' + (1000 + Math.floor(Math.random() * 9000))
-    updateUser((u) => ({
-      ...u,
-      tickets: [...(u.tickets || []), { id, topic, msg: msg.trim(), ts: Date.now(), status: 'Đã tiếp nhận' }],
-      notifs: [
-        {
-          id: 'n' + Date.now() + Math.floor(Math.random() * 999),
-          t: 'system',
-          title: 'Đã nhận yêu cầu hỗ trợ',
-          body: 'Mã ' + id + ', chủ đề: ' + topic + '. Nhân viên sẽ phản hồi trong giờ làm việc.',
-          ts: Date.now(),
-          read: false,
-        },
-        ...u.notifs,
-      ],
-    }))
+    if (msg.trim().length > 800) return setErr('Nội dung tối đa 800 ký tự.')
+    setBusy(true)
+    const r = await addTicket(topic, msg.trim())
+    setBusy(false)
+    if (!r.ok) return setErr(r.error)
     setMsg('')
     setErr('')
-    toast('Đã gửi yêu cầu, mã ' + id)
+    toast('Đã gửi yêu cầu, mã ' + r.ticket.id)
   }
 
-  const tickets = [...(user.tickets || [])].reverse()
+  const tickets = user.tickets || [] // backend trả về yêu cầu mới nhất trước
 
   return (
     <>
@@ -119,7 +110,7 @@ export default function Support({ tab, onTab }) {
                   <div className="tk" key={x.id}>
                     <div className="r">
                       <b>{x.topic}</b>
-                                          <span className={'pill ' + (x.status === 'Đã xử lý' ? 'pill-ok' : 'pill-accent')}>{x.status}</span>
+                      <span className={'pill ' + (x.status === 'Đã xử lý' ? 'pill-ok' : 'pill-accent')}>{x.status}</span>
                     </div>
                     <p className="hint">{x.msg}</p>
                     {x.reply && (
@@ -166,8 +157,8 @@ export default function Support({ tab, onTab }) {
                   {err}
                 </p>
               )}
-              <button className="btn btn-primary" type="submit">
-                Gửi yêu cầu
+              <button className="btn btn-primary" type="submit" disabled={busy}>
+                {busy ? 'Đang gửi...' : 'Gửi yêu cầu'}
               </button>
             </form>
           </div>

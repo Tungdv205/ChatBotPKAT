@@ -14,5 +14,7 @@ public interface TicketRepository extends JpaRepository<SupportTicket, String> {
 
     long countByStatus(TicketStatus status);
 
+    List<SupportTicket> findTop500ByOrderByCreatedAtDesc();
+
     void deleteByUserId(Long userId);
 }

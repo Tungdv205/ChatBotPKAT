@@ -34,7 +34,9 @@ D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\repo\VoucherRepository.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\security\JwtAuthFilter.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\security\JwtService.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\security\RateLimitFilter.java
+D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\service\AdminCatalogService.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\service\AdminService.java
+D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\service\AdminTicketService.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\service\AppointmentService.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\service\AuditService.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\service\AuthService.java
@@ -42,10 +44,12 @@ D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\service\CatalogService.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\service\NotificationService.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\service\TicketService.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\service\UserDataCleaner.java
+D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\web\AdminCatalogController.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\web\AdminController.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\web\AppointmentController.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\web\AuthController.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\web\CatalogController.java
+D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\web\dto\AdminCatalogDtos.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\web\dto\AdminDtos.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\web\dto\AppointmentDtos.java
 D:\ChatBotFAQ\backend\src\main\java\vn\anhthu\hengio\web\dto\AuthDtos.java

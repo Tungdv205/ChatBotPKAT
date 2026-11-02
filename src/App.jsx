@@ -16,9 +16,11 @@ import BookingSuccess from './pages/BookingSuccess.jsx'
 import Placeholder from './pages/Placeholder.jsx'
 import { canChange } from './utils/appointments.js'
 import { copyText } from './utils/clipboard.js'
+import { api } from './api/client.js'
+import { applyCatalog } from './data/catalog.js'
 
 export default function App() {
-  const { user } = useAuth()
+  const { user, booting } = useAuth()
   const toast = useToast()
   const [view, setView] = useState('home')
   const [stack, setStack] = useState([]) // các màn đã đi qua, để nút Quay lại dùng
@@ -29,6 +31,15 @@ export default function App() {
   const [svcPreset, setSvcPreset] = useState({ cat: 'all', detail: null }) // màn Dịch vụ
   const [lastApptId, setLastApptId] = useState(null) // lịch vừa đặt xong, màn thành công đọc
 
+  // Danh mục dịch vụ, bác sĩ, ưu đãi lấy từ backend một lần khi mở trang
+  const [catReady, setCatReady] = useState(false)
+  useEffect(() => {
+    api('/api/catalog', { token: null })
+      .then(applyCatalog)
+      .catch(() => {}) // lỗi thì dùng dữ liệu mẫu có sẵn
+      .finally(() => setCatReady(true))
+  }, [])
+  
   // Đăng xuất thì lần đăng nhập sau quay về Trang chủ
   useEffect(() => {
     if (!user) {
@@ -92,6 +103,8 @@ export default function App() {
 
   const item = NAV.find((n) => n[0] === view) || NAV[0]
 
+  // Đang kiểm tra phiên đăng nhập đã lưu: chưa hiện gì để khỏi nháy sang màn đăng nhập
+   if (booting || !catReady) return <div style={{ padding: 40, textAlign: 'center', color: '#667' }}>Đang tải...</div>
   return (
     <>
       {user ? (

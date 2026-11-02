@@ -55,3 +55,14 @@ export const FAQ = [
   ['Tôi không chọn được bác sĩ mong muốn?', 'Khung giờ bị gạch ngang nghĩa là bác sĩ đã kín lịch. Bạn chọn giờ khác hoặc chọn Bất kỳ bác sĩ rảnh để có nhiều giờ trống hơn.'],
   ['Trường hợp khẩn cấp thì sao?', 'Đặt lịch trực tuyến không dành cho cấp cứu. Khi có dấu hiệu nguy hiểm, hãy gọi 115 hoặc đến cơ sở y tế gần nhất ngay.'],
 ]
+
+// Danh mục lấy từ backend: nạp thẳng vào các mảng ở trên để mọi màn hình dùng chung.
+// Nếu backend không trả dữ liệu thì giữ nguyên dữ liệu mẫu ở trên.
+export function applyCatalog(res) {
+  if (!res || !Array.isArray(res.services) || !res.services.length) return
+  const fill = (arr, items) => arr.splice(0, arr.length, ...(items || []))
+  fill(CATS, res.categories)
+  fill(SERVICES, res.services)
+  fill(STAFF, res.staff)
+  fill(VOUCHERS, res.vouchers)
+}

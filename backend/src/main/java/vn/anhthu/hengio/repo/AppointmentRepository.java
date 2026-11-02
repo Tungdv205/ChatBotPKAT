@@ -24,6 +24,8 @@ public interface AppointmentRepository extends JpaRepository<Appointment, String
 
     long countByUserId(Long userId);
 
+    boolean existsByStaffIdAndStatusAndDateGreaterThanEqual(String staffId, ApptStatus status, LocalDate date);
+
     long countByDateAndStatusNot(LocalDate date, ApptStatus status);
 
     @Query("select coalesce(sum(a.total), 0) from Appointment a where a.status <> :s")

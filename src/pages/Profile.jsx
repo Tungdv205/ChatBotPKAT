@@ -19,9 +19,9 @@ function Switch({ title, desc, on, onChange }) {
   )
 }
 
-// Màn Hồ sơ: thông tin cá nhân, cài đặt nhắc lịch, đổi mật khẩu, đăng xuất
+// Màn Hồ sơ: thông tin cá nhân, cài đặt nhắc lịch, đổi mật khẩu, đăng xuất, xóa tài khoản
 export default function Profile() {
-  const { user, updateUser, logout } = useAuth()
+  const { user, saveProfile, changePassword, deleteAccount, logout } = useAuth()
   const toast = useToast()
 
   const done = user.appts.filter((a) => eff(a) === 'done')
@@ -32,12 +32,13 @@ export default function Profile() {
   const [err, setErr] = useState('')
   const setField = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }))
 
-  const saveProfile = (e) => {
+  const submitProfile = async (e) => {
     e.preventDefault()
     const phone = f.phone.replace(/[\s.]/g, '')
     if (!f.name.trim()) return setErr('Nhập họ và tên.')
     if (phone && !phoneRe.test(phone)) return setErr('Số điện thoại gồm 10 số, bắt đầu bằng 0.')
-    updateUser((u) => ({ ...u, name: f.name.trim(), phone, dob: f.dob, gender: f.gender }))
+    const r = await saveProfile({ name: f.name.trim(), phone, dob: f.dob, gender: f.gender })
+    if (!r.ok) return setErr(r.error)
     setErr('')
     toast('Đã lưu hồ sơ')
   }
@@ -47,18 +48,31 @@ export default function Profile() {
   const [pwErr, setPwErr] = useState('')
   const setPwField = (k) => (e) => setPw((s) => ({ ...s, [k]: e.target.value }))
 
-  const changePw = (e) => {
+  const changePw = async (e) => {
     e.preventDefault()
-    if (pw.old !== user.pass) return setPwErr('Mật khẩu hiện tại chưa đúng.')
-    if (pw.pass.length < 6) return setPwErr('Mật khẩu mới cần ít nhất 6 ký tự.')
+    if (!pw.old) return setPwErr('Nhập mật khẩu hiện tại.')
+    if (!/^(?=.*[A-Za-z])(?=.*\d).{8,64}$/.test(pw.pass)) return setPwErr('Mật khẩu mới cần 8 đến 64 ký tự, gồm cả chữ và số.')
     if (pw.pass !== pw.pass2) return setPwErr('Hai mật khẩu mới chưa giống nhau.')
-    updateUser((u) => ({ ...u, pass: pw.pass }))
+    const r = await changePassword(pw.old, pw.pass)
+    if (!r.ok) return setPwErr(r.error)
     setPw({ old: '', pass: '', pass2: '' })
     setPwErr('')
     toast('Đã đổi mật khẩu')
   }
 
-  const setSetting = (k) => (v) => updateUser((u) => ({ ...u, settings: { ...u.settings, [k]: v } }))
+  const setSetting = (k) => async (v) => {
+    const r = await saveProfile({ settings: { [k]: v } })
+    if (!r.ok) toast(r.error)
+  }
+
+  // Xóa tài khoản: phải nhập lại mật khẩu, xóa luôn lịch hẹn, thông báo và yêu cầu hỗ trợ
+  const [del, setDel] = useState({ open: false, pass: '', err: '' })
+  const removeAccount = async (e) => {
+    e.preventDefault()
+    if (!del.pass) return setDel((d) => ({ ...d, err: 'Nhập mật khẩu để xác nhận.' }))
+    const r = await deleteAccount(del.pass)
+    if (!r.ok) return setDel((d) => ({ ...d, err: r.error }))
+  }
 
   return (
     <>
@@ -98,7 +112,7 @@ export default function Profile() {
       <div className="two">
         <div className="card">
           <h2 style={{ fontSize: 18, marginBottom: 14 }}>Thông tin cá nhân</h2>
-          <form onSubmit={saveProfile} noValidate>
+          <form onSubmit={submitProfile} noValidate>
             <div className="field">
               <label htmlFor="p-name">Họ và tên</label>
               <input id="p-name" type="text" value={f.name} onChange={setField('name')} />
@@ -182,6 +196,36 @@ export default function Profile() {
             <Icon name="out" size={18} />
             Đăng xuất
           </button>
+
+          <div className="card">
+            <h2 style={{ fontSize: 18, marginBottom: 6 }}>Xóa tài khoản</h2>
+            <p className="hint" style={{ marginBottom: 12 }}>
+              Xóa vĩnh viễn tài khoản cùng toàn bộ lịch hẹn, thông báo và yêu cầu hỗ trợ của bạn. Không thể khôi phục.
+            </p>
+            {del.open ? (
+              <form onSubmit={removeAccount} noValidate>
+                <div className="field">
+                  <label htmlFor="d-pass">Nhập mật khẩu để xác nhận</label>
+                  <input id="d-pass" type="password" autoComplete="current-password" value={del.pass} onChange={(e) => setDel({ ...del, pass: e.target.value, err: '' })} />
+                </div>
+                {del.err && (
+                  <p className="err" role="alert">
+                    {del.err}
+                  </p>
+                )}
+                <button className="btn btn-danger" type="submit">
+                  Xóa vĩnh viễn
+                </button>{' '}
+                <button className="btn btn-line" type="button" onClick={() => setDel({ open: false, pass: '', err: '' })}>
+                  Hủy
+                </button>
+              </form>
+            ) : (
+              <button className="btn btn-line" onClick={() => setDel({ ...del, open: true })}>
+                Xóa tài khoản của tôi
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </>

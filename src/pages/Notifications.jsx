@@ -12,13 +12,12 @@ const TYPES = {
 
 // Màn Thông báo: bấm vào một thông báo để đánh dấu đã đọc
 export default function Notifications() {
-  const { user, updateUser } = useAuth()
+  const { user, markRead, markAllRead } = useAuth()
   const list = user.notifs
   const unread = list.filter((n) => !n.read).length
 
-  const readOne = (id) =>
-    updateUser((u) => ({ ...u, notifs: u.notifs.map((n) => (n.id === id ? { ...n, read: true } : n)) }))
-  const readAll = () => updateUser((u) => ({ ...u, notifs: u.notifs.map((n) => ({ ...n, read: true })) }))
+  const readOne = (id) => markRead(id)
+  const readAll = () => markAllRead()
 
   return (
     <>
