@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import Icon from '../components/Icon.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../components/Toast.jsx'
-import { staffById, svcById } from '../utils/appointments.js'
+  import { apptSvc, staffById } from '../utils/appointments.js'
 import { copyText } from '../utils/clipboard.js'
 import { longDate, vnd } from '../utils/helpers.js'
 
@@ -18,7 +18,7 @@ export default function BookingSuccess({ app, apptId }) {
   }, [a])
   if (!a) return null
 
-  const s = svcById(a.svc)
+  const s = apptSvc(a)
   const st = staffById(a.staff)
 
   const copyInfo = () =>

@@ -14,7 +14,7 @@ import Support from './pages/Support.jsx'
 import Booking from './pages/Booking.jsx'
 import BookingSuccess from './pages/BookingSuccess.jsx'
 import Placeholder from './pages/Placeholder.jsx'
-import { canChange } from './utils/appointments.js'
+  import { canChange, svcById } from './utils/appointments.js'
 import { copyText } from './utils/clipboard.js'
 import { api } from './api/client.js'
 import { applyCatalog } from './data/catalog.js'
@@ -81,6 +81,7 @@ export default function App() {
     },
     reschedule: (a) => {
       if (!canChange(a)) return toast('Còn dưới 2 giờ nên không thể đổi lịch trực tuyến. Hãy gọi hotline.')
+                if (!svcById(a.svc)) return toast('Dịch vụ này đã ngừng cung cấp. Hãy hủy lịch và đặt dịch vụ khác.')
       app.startBooking({ svc: a.svc, editId: a.id, note: a.note, step: 2 })
     },
     clearSvcPreset: () => setSvcPreset({ cat: 'all', detail: null }),

@@ -3,7 +3,7 @@ import Icon from '../components/Icon.jsx'
 import AppointmentCard from '../components/AppointmentCard.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../components/Toast.jsx'
-import { canChange, eff, staffById, startOf, svcById, upcomingList } from '../utils/appointments.js'
+import { apptSvc, canChange, eff, staffById, startOf, svcById, upcomingList } from '../utils/appointments.js'
 import { copyText } from '../utils/clipboard.js'
 import { longDate } from '../utils/helpers.js'
 
@@ -20,7 +20,7 @@ const EMPTY_TEXT = {
 
 // Màn Lịch hẹn của tôi: xem, đổi, hủy, đánh giá và đặt lại lịch hẹn
 export default function Appointments({ app }) {
-  const { user, updateUser } = useAuth()
+  const { user, cancelAppt, rateAppt } = useAuth()
   const toast = useToast()
   const [tab, setTab] = useState('upcoming')
   const [confirmId, setConfirmId] = useState(null) // lịch đang hỏi xác nhận hủy
@@ -40,38 +40,24 @@ export default function Appointments({ app }) {
       setConfirmId(a.id)
     },
     keep: () => setConfirmId(null),
-    doCancel: (a) => {
-      const s = svcById(a.svc)
-      updateUser((u) => ({
-        ...u,
-        appts: u.appts.map((x) => (x.id === a.id ? { ...x, status: 'cancelled' } : x)),
-        notifs: [
-          {
-            id: 'n' + Date.now() + Math.floor(Math.random() * 999),
-            t: 'booking',
-            title: 'Đã hủy lịch hẹn',
-            body: s.name + ' ngày ' + longDate(a.date) + ' đã được hủy.',
-            ts: Date.now(),
-            read: false,
-          },
-          ...u.notifs,
-        ],
-      }))
+    doCancel: async (a) => {
+      const r = await cancelAppt(a.id)
       setConfirmId(null)
-      toast('Đã hủy lịch hẹn')
+      toast(r.ok ? 'Đã hủy lịch hẹn' : r.error)
     },
     copy: (a) =>
       copyText(
-        'Phòng khám đa khoa Anh Thu - ' + svcById(a.svc).name + ' - ' + a.time + ', ' + longDate(a.date) +
+        'Phòng khám đa khoa Anh Thu - ' + apptSvc(a).name + ' - ' + a.time + ', ' + longDate(a.date) +
           ' - Bác sĩ ' + staffById(a.staff).name + ' - Mã ' + a.id,
         'Đã sao chép thông tin lịch hẹn',
         toast
       ),
-    rate: (id, n) => {
-      updateUser((u) => ({ ...u, appts: u.appts.map((x) => (x.id === id ? { ...x, rating: n } : x)) }))
-      toast('Cảm ơn bạn đã đánh giá ' + n + ' sao')
+    rate: async (id, n) => {
+      const r = await rateAppt(id, n)
+      toast(r.ok ? 'Cảm ơn bạn đã đánh giá ' + n + ' sao' : r.error)
     },
-       rebook: (a) => app.startBooking({ svc: a.svc, step: 2 }),
+    // Dịch vụ đã ngừng cung cấp thì đặt lại từ đầu
+    rebook: (a) => app.startBooking(svcById(a.svc) ? { svc: a.svc, step: 2 } : {}),
   }
 
   return (

@@ -7,8 +7,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useToast } from '../components/Toast.jsx'
 import { SERVICES } from '../data/catalog.js'
 import { svcById } from '../utils/appointments.js'
-import { calcDiscount, currentTotals, newApptId, pickStaff, slotState } from '../utils/booking.js'
-import { longDate, mins } from '../utils/helpers.js'
+import { calcDiscount, currentTotals } from '../utils/booking.js'
 
 const STEPS = ['Dịch vụ', 'Ngày giờ', 'Xác nhận']
 
@@ -26,21 +25,13 @@ const EMPTY = {
   editId: null,
 }
 
-const newNotif = (title, body) => ({
-  id: 'n' + Date.now() + Math.floor(Math.random() * 999),
-  t: 'booking',
-  title,
-  body,
-  ts: Date.now(),
-  read: false,
-})
-
-// preset: dữ liệu màn khác truyền sang (dịch vụ, mã ưu đãi, hoặc lịch cần đổi)
+// preset: dữ liệu màn khác truyền sang (dịch vụ, bác sĩ, mã ưu đãi, hoặc lịch cần đổi)
 export default function Booking({ app, preset }) {
-  const { user, updateUser } = useAuth()
+  const { user, createAppt, rescheduleAppt } = useAuth()
   const toast = useToast()
   const [b, setB] = useState(() => ({ ...EMPTY, ...(preset || {}), staff: 'any' })) // luôn tự xếp bác sĩ, khách không chọn
   const set = (patch) => setB((s) => ({ ...s, ...patch }))
+  const [busy, setBusy] = useState(false)
 
   // Đã đọc xong dữ liệu chuyển tiếp thì xóa đi để lần vào sau từ menu bắt đầu mới
   useEffect(() => {
@@ -55,7 +46,7 @@ export default function Booking({ app, preset }) {
     window.scrollTo({ top: 0 })
   }, [step])
 
-   // Bấm dịch vụ: chưa chọn thì thêm, đã chọn thì bỏ chọn. Mã lưu dạng 's1+s12' theo thứ tự danh mục
+  // Bấm dịch vụ: chưa chọn thì thêm, đã chọn thì bỏ chọn. Mã lưu dạng 's1+s12' theo thứ tự danh mục
   const pickSvc = (id) => {
     const cur = b.svc ? b.svc.split('+') : []
     const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]
@@ -66,48 +57,27 @@ export default function Booking({ app, preset }) {
     set({ svc: key || null, date: null, time: null, code: '', codeErr: '' })
   }
 
-  const confirm = () => {
-    const m = mins(b.time)
-    if (slotState(user.appts, svc, b.staff, b.date, m, b.editId) !== 'ok') {
-      toast('Khung giờ này vừa kín, vui lòng chọn giờ khác.')
-      return set({ time: null, step: 2 })
+  // Gửi lên backend. Backend kiểm tra lại giờ trống, trùng lịch, mã ưu đãi rồi mới lưu.
+  const confirm = async () => {
+    setBusy(true)
+    const r = b.editId
+      ? await rescheduleAppt(b.editId, { staff: 'any', date: b.date, time: b.time })
+      : await createAppt({
+          svc: b.svc,
+          staff: 'any',
+          date: b.date,
+          time: b.time,
+          code: currentTotals(user.appts, b, svc).code || '',
+          note: b.note.trim(),
+        })
+    setBusy(false)
+    if (!r.ok) {
+      toast(r.error)
+      // Giờ vừa bị người khác đặt mất hoặc trùng lịch: quay lại chọn giờ khác
+      if (r.status === 409) set({ time: null, step: 2 })
+      return
     }
-    const staffId = b.staff === 'any' ? pickStaff(user.appts, svc, b.date, m, b.editId) : b.staff
-    let id = b.editId
-    if (b.editId) {
-      updateUser((u) => ({
-        ...u,
-        appts: u.appts.map((a) =>
-          a.id === b.editId ? { ...a, date: b.date, time: b.time, staff: staffId, note: b.note, reminded: false } : a
-        ),
-        notifs: [newNotif('Đã đổi lịch hẹn', svc.name + ' lúc ' + b.time + ', ' + longDate(b.date) + '.'), ...u.notifs],
-      }))
-    } else {
-      const t = currentTotals(user.appts, b, svc)
-      id = newApptId(user.appts)
-      const appt = {
-        id,
-        svc: svc.id,
-        staff: staffId,
-        date: b.date,
-        time: b.time,
-        note: b.note,
-        code: t.code,
-        discount: t.d,
-        total: t.total,
-        status: 'upcoming',
-        created: Date.now(),
-      }
-      updateUser((u) => ({
-        ...u,
-        appts: [...u.appts, appt],
-        notifs: [
-          newNotif('Đặt lịch thành công', svc.name + ' lúc ' + b.time + ', ' + longDate(b.date) + '. Mã ' + id + '.'),
-          ...u.notifs,
-        ],
-      }))
-    }
-    app.finishBooking(id)
+    app.finishBooking(r.appt.id)
   }
 
   const next = () => {
@@ -132,7 +102,7 @@ export default function Booking({ app, preset }) {
   const back = () => set({ step: Math.max(1, step - 1) })
 
   const canNext = step === 1 ? !!svc : step === 2 ? !!b.time : true
-  const nextLabel = step === 3 ? (b.editId ? 'Xác nhận đổi lịch' : 'Xác nhận đặt lịch') : 'Tiếp tục'
+  const nextLabel = busy ? 'Đang xử lý...' : step === 3 ? (b.editId ? 'Xác nhận đổi lịch' : 'Xác nhận đặt lịch') : 'Tiếp tục'
 
   return (
     <>
@@ -169,14 +139,14 @@ export default function Booking({ app, preset }) {
       </div>
 
       {step === 1 && <Step1Service b={b} set={set} onPickSvc={pickSvc} />}
-      {step === 2 && <Step3DateTime svc={svc} b={b} set={set} appts={user.appts} />}
+      {step === 2 && <Step3DateTime svc={svc} b={b} set={set} />}
       {step === 3 && <Step4Confirm svc={svc} b={b} set={set} user={user} onGoProfile={() => app.go('profile')} />}
 
       <WizardFooter
         step={step}
         editId={b.editId}
         svc={svc}
-        canNext={canNext}
+        canNext={canNext && !busy}
         nextLabel={nextLabel}
         onBack={back}
         onNext={next}

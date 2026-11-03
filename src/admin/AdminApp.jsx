@@ -12,7 +12,7 @@ import AdminStaff from './pages/AdminStaff.jsx'
 
 // Gốc của trang quản trị
 export default function AdminApp() {
-  const { admin } = useAdmin()
+  const { admin, booting } = useAdmin()
   const [view, setView] = useState('dash')
   const [stack, setStack] = useState([]) // các màn đã đi qua, để nút Quay lại dùng
 
@@ -23,8 +23,9 @@ export default function AdminApp() {
       setStack([])
     }
   }, [admin])
-
+if (booting) return <div style={{ padding: 40, textAlign: 'center', color: '#667' }}>Đang tải...</div>
   if (!admin) return <AdminLogin />
+  
 
   const go = (v) => {
     if (v !== view) setStack((st) => [...st.slice(-19), view])

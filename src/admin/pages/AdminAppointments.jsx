@@ -19,23 +19,35 @@ const PILL = {
 
 // Hộp thoại chi tiết một lịch hẹn
 function Detail({ id, startCancel, onClose }) {
-  const { appts, svcOf, staffOf, staff, updateAppt } = useAdmin()
+  const { appts, staffOf, cancelAppt, doneAppt } = useAdmin()
   const toast = useToast()
   const [confirmCancel, setConfirmCancel] = useState(!!startCancel)
   const [reason, setReason] = useState('')
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
   const a = appts.find((x) => x.id === id)
   if (!a) return null
 
-  const svc = svcOf(a.svc)
   const st = eff(a)
   const [pc, pt] = PILL[st]
-  const eligible = staff.filter((s) => svc && s.cats.includes(svc.cat))
-  const when = svc.name + ' ngày ' + longDate(a.date) + ' lúc ' + a.time
 
-  const act = (patch, notif, msg) => {
-    updateAppt(a.user.email, a.id, patch, notif)
-    toast(msg)
-    setConfirmCancel(false)
+  const markDone = async () => {
+    setBusy(true)
+    const r = await doneAppt(a.id)
+    setBusy(false)
+    if (!r.ok) return setErr(r.error)
+    toast('Đã đánh dấu đã khám, khách đã nhận thông báo')
+    onClose()
+  }
+
+  const cancel = async () => {
+    if (!reason.trim()) return setErr('Nhập lý do hủy để gửi cho khách.')
+    setBusy(true)
+    const r = await cancelAppt(a.id, reason.trim())
+    setBusy(false)
+    if (!r.ok) return setErr(r.error)
+    toast('Đã hủy lịch, khách đã nhận thông báo')
+    onClose()
   }
 
   return (
@@ -49,19 +61,21 @@ function Detail({ id, startCancel, onClose }) {
           <dd>
             {a.user.name}
             <br />
-            <small className="hint">
-              {a.user.phone || 'Chưa có số điện thoại'} · {a.user.email}
-            </small>
+            <small className="hint">{a.user.phone || 'Chưa có số điện thoại'} (đã che bớt để bảo mật)</small>
           </dd>
         </div>
         <div>
           <dt>Dịch vụ</dt>
-          <dd>{svc.name}</dd>
+          <dd>{a.svcName}</dd>
+        </div>
+        <div>
+          <dt>Bác sĩ phụ trách</dt>
+          <dd>{staffOf(a.staff)?.name || a.staff}</dd>
         </div>
         <div>
           <dt>Thời gian</dt>
           <dd>
-            {a.time} · {svc.dur} phút
+            {a.time} · {a.dur} phút
             <br />
             {longDate(a.date)}
           </dd>
@@ -78,7 +92,7 @@ function Detail({ id, startCancel, onClose }) {
         )}
         <div>
           <dt>Mã ưu đãi</dt>
-          <dd>{a.code ? a.code + ' (-' + vnd(a.discount) + ')' : 'Không dùng'}</dd>
+          <dd>{a.code || 'Không dùng'}</dd>
         </div>
         <div className="tot">
           <dt>Thanh toán tại quầy</dt>
@@ -86,28 +100,7 @@ function Detail({ id, startCancel, onClose }) {
         </div>
       </dl>
 
-      <div className="field" style={{ margin: 0 }}>
-        <label htmlFor="ad-staff">Bác sĩ phụ trách</label>
-        <select
-          id="ad-staff"
-          value={a.staff}
-          disabled={st !== 'upcoming'}
-          onChange={(e) =>
-            act(
-              { staff: e.target.value },
-              { title: 'Đổi bác sĩ phụ trách', body: 'Lịch ' + when + ' do ' + staffOf(e.target.value).name + ' phụ trách.' },
-              'Đã đổi bác sĩ'
-            )
-          }
-        >
-          {!eligible.some((s) => s.id === a.staff) && <option value={a.staff}>{staffOf(a.staff)?.name || a.staff}</option>}
-          {eligible.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {err && <p className="err" role="alert">{err}</p>}
 
       {st === 'upcoming' &&
         (confirmCancel ? (
@@ -115,71 +108,41 @@ function Detail({ id, startCancel, onClose }) {
             <span>Hủy lịch này? Khách sẽ nhận được thông báo kèm lý do bên dưới.</span>
             <textarea
               aria-label="Lý do hủy"
-              placeholder="Lý do hủy gửi cho khách (không bắt buộc), ví dụ: bác sĩ có việc đột xuất"
+              placeholder="Lý do hủy gửi cho khách, ví dụ: bác sĩ có việc đột xuất"
+              maxLength={200}
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={(e) => {
+                setReason(e.target.value)
+                setErr('')
+              }}
               style={{ minHeight: 64 }}
             />
             <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              <button className="btn btn-sm btn-line" onClick={() => setConfirmCancel(false)}>
+              <button className="btn btn-sm btn-line" disabled={busy} onClick={() => setConfirmCancel(false)}>
                 Giữ lịch
               </button>
-              <button
-                className="btn btn-sm btn-danger"
-                onClick={() =>
-                  act(
-                    { status: 'cancelled', cancelledBy: 'clinic', cancelReason: reason.trim() },
-                    {
-                      title: 'Phòng khám đã hủy lịch hẹn',
-                      body:
-                        'Lịch ' + when + ' đã được phòng khám hủy.' +
-                        (reason.trim() ? ' Lý do: ' + reason.trim().replace(/[.!?\s]+$/, '') + '.' : '') +
-                        ' Vui lòng đặt lại hoặc gọi hotline.',
-                    },
-                    'Đã hủy lịch, khách đã nhận thông báo'
-                  )
-                }
-              >
-                Xác nhận hủy lịch
+              <button className="btn btn-sm btn-danger" disabled={busy} onClick={cancel}>
+                {busy ? 'Đang hủy...' : 'Xác nhận hủy lịch'}
               </button>
             </span>
           </div>
         ) : (
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() =>
-                act(
-                  { status: 'done' },
-                  { title: 'Đã hoàn tất lịch khám', body: when + '. Bạn có thể đánh giá trong Lịch hẹn của tôi.' },
-                  'Đã đánh dấu đã khám'
-                )
-              }
-            >
+            <button className="btn btn-primary btn-sm" disabled={busy} onClick={markDone}>
               Đánh dấu đã khám
             </button>
-            <button className="btn btn-danger btn-sm" onClick={() => setConfirmCancel(true)}>
+            <button className="btn btn-danger btn-sm" disabled={busy} onClick={() => setConfirmCancel(true)}>
               Hủy lịch
             </button>
           </div>
         ))}
-      {st === 'cancelled' && (
-        <div>
-          <button
-            className="btn btn-line btn-sm"
-            onClick={() => act({ status: 'upcoming', cancelledBy: null, cancelReason: null }, { title: 'Lịch hẹn đã được khôi phục', body: 'Lịch ' + when + ' đã được khôi phục.' }, 'Đã khôi phục lịch')}
-          >
-            Khôi phục lịch
-          </button>
-        </div>
-      )}
     </Modal>
   )
 }
 
 // Màn Lịch hẹn: tìm, lọc theo trạng thái và ngày, xem chi tiết, xử lý
 export default function AdminAppointments() {
-  const { appts, svcOf, staffOf } = useAdmin()
+  const { appts, staffOf } = useAdmin()
   const [q, setQ] = useState('')
   const [f, setF] = useState('all')
   const [date, setDate] = useState('')
@@ -187,7 +150,7 @@ export default function AdminAppointments() {
 
   const key = norm(q.trim())
   const match = (a) =>
-    !key || norm([a.id, a.user.name, a.user.phone, a.user.email, svcOf(a.svc)?.name].join(' ')).includes(key)
+    !key || norm([a.id, a.user.name, a.svcName].join(' ')).includes(key)
 
   const base = appts.filter((a) => match(a) && (!date || a.date === date))
   const count = (id) => (id === 'all' ? base.length : base.filter((a) => eff(a) === id).length)
@@ -205,7 +168,7 @@ export default function AdminAppointments() {
       </div>
 
       <div className="toolbar">
-        <SearchBox value={q} onChange={setQ} placeholder="Tìm theo tên, số điện thoại, mã lịch, dịch vụ" />
+        <SearchBox value={q} onChange={setQ} placeholder="Tìm theo tên khách, mã lịch, dịch vụ" />
         <div className="datef">
           <label className="lbl" htmlFor="ad-date">Ngày</label>
           <input id="ad-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
@@ -255,9 +218,9 @@ export default function AdminAppointments() {
                       <td>
                         {a.user.name}
                         <br />
-                        <small className="hint">{a.user.phone || a.user.email}</small>
+                        <small className="hint">{a.user.phone || '—'}</small>
                       </td>
-                      <td>{svcOf(a.svc)?.name}</td>
+                      <td>{a.svcName}</td>
                       <td style={{ whiteSpace: 'nowrap' }}>
                         {a.time}
                         <br />

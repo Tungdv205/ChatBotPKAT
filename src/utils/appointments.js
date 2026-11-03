@@ -24,7 +24,13 @@ export const svcById = (id) => {
     inc: items.flatMap((s) => s.inc || []),
   }
 }
-export const staffById = (id) => STAFF.find((s) => s.id === id)
+// Bác sĩ đã ngừng làm việc (bị ẩn khỏi danh mục) thì vẫn hiện được lịch cũ
+export const staffById = (id) =>
+  STAFF.find((s) => s.id === id) || { id, name: 'Bác sĩ phòng khám', role: '', cats: [], rating: 0, years: 0 }
+
+// Tên và thời lượng dịch vụ của một lịch hẹn lấy từ chính lịch đó (backend đã lưu lại lúc đặt),
+// nên vẫn đúng cả khi dịch vụ về sau bị ẩn hoặc đổi tên
+export const apptSvc = (a) => ({ name: a.svcName || (svcById(a.svc) || {}).name || 'Dịch vụ', dur: a.dur || (svcById(a.svc) || {}).dur || 30 })
 export const catById = (id) => CATS.find((c) => c.id === id)
 
 export function startOf(a) {
@@ -34,7 +40,7 @@ export function startOf(a) {
 }
 export function endOf(a) {
   const d = parseKey(a.date)
-  d.setMinutes(mins(a.time) + svcById(a.svc).dur)
+  d.setMinutes(mins(a.time) + apptSvc(a).dur)
   return d
 }
 

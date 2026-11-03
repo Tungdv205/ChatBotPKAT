@@ -13,23 +13,22 @@ const FILTERS = [
 
 // Hộp thoại xem và trả lời một yêu cầu
 function Detail({ id, onClose }) {
-  const { tickets, updateTicket } = useAdmin()
+  const { tickets, replyTicket } = useAdmin()
   const toast = useToast()
   const t = tickets.find((x) => x.id === id)
   const [reply, setReply] = useState(t?.reply || '')
   const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
   if (!t) return null
   const done = t.status === DONE
 
-  const send = (e) => {
+  const send = async (e) => {
     e.preventDefault()
     if (!reply.trim()) return setErr('Nhập nội dung trả lời.')
-    updateTicket(
-      t.user.email,
-      t.id,
-      { status: DONE, reply: reply.trim() },
-      { title: 'Phòng khám đã trả lời yêu cầu ' + t.id, body: reply.trim() }
-    )
+    setBusy(true)
+    const r = await replyTicket(t.id, reply.trim())
+    setBusy(false)
+    if (!r.ok) return setErr(r.error)
     toast('Đã gửi trả lời cho khách')
     onClose()
   }
@@ -46,7 +45,7 @@ function Detail({ id, onClose }) {
           <dd>
             {t.user.name}
             <br />
-            <small className="hint">{t.user.phone || t.user.email}</small>
+            <small className="hint">{t.user.phone || '—'}</small>
           </dd>
         </div>
         <div>
@@ -60,25 +59,19 @@ function Detail({ id, onClose }) {
       <form onSubmit={send} noValidate>
         <div className="field">
           <label htmlFor="tk-reply">Trả lời khách</label>
-          <textarea id="tk-reply" value={reply} onChange={(e) => setReply(e.target.value)} placeholder="Nội dung sẽ gửi vào Thông báo của khách" />
+          <textarea
+            id="tk-reply"
+            maxLength={800}
+            value={reply}
+            onChange={(e) => setReply(e.target.value)}
+            placeholder="Nội dung sẽ gửi vào Thông báo của khách"
+          />
         </div>
         {err && <p className="err" role="alert">{err}</p>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" type="submit">
-            {done ? 'Gửi lại trả lời' : 'Gửi trả lời và đánh dấu đã xử lý'}
+          <button className="btn btn-primary" type="submit" disabled={busy}>
+            {busy ? 'Đang gửi...' : done ? 'Gửi lại trả lời' : 'Gửi trả lời và đánh dấu đã xử lý'}
           </button>
-          {done && (
-            <button
-              className="btn btn-line"
-              type="button"
-              onClick={() => {
-                updateTicket(t.user.email, t.id, { status: 'Đã tiếp nhận' })
-                toast('Đã mở lại yêu cầu')
-              }}
-            >
-              Mở lại
-            </button>
-          )}
         </div>
       </form>
     </Modal>
@@ -93,7 +86,7 @@ export default function AdminTickets() {
   const [open, setOpen] = useState(null)
 
   const key = norm(q.trim())
-  const base = tickets.filter((t) => !key || norm([t.id, t.topic, t.msg, t.user.name, t.user.phone].join(' ')).includes(key))
+  const base = tickets.filter((t) => !key || norm([t.id, t.topic, t.msg, t.user.name].join(' ')).includes(key))
   const isDone = (t) => t.status === DONE
   const count = (id) => (id === 'all' ? base.length : base.filter((t) => (id === 'done') === isDone(t)).length)
   const list = base

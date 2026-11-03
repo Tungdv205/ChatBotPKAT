@@ -4,29 +4,31 @@ import { addDays, dkey, longDate, vnd, WDS } from '../../utils/helpers.js'
 
 // Màn Tổng quan: số liệu nhanh, biểu đồ 7 ngày tới, dịch vụ nổi bật, lịch sắp tới
 export default function Dashboard({ go }) {
-  const { admin, appts, customers, svcOf, staffOf } = useAdmin()
+  const { admin, appts, stats, staffOf } = useAdmin()
   const today = dkey(new Date())
 
   const live = appts.filter((a) => a.status !== 'cancelled')
   const upcoming = appts.filter((a) => eff(a) === 'upcoming').sort((a, b) => startOf(a) - startOf(b))
   const done = appts.filter((a) => eff(a) === 'done')
   const cancelled = appts.filter((a) => a.status === 'cancelled')
-  const todayCount = live.filter((a) => a.date === today).length
+    const todayCount = upcoming.filter((a) => a.date === today).length
   const revenue = done.reduce((s, a) => s + a.total, 0)
-  const openTickets = customers.reduce((n, u) => n + (u.tickets || []).filter((t) => t.status !== 'Đã xử lý').length, 0)
+  const openTickets = stats ? stats.openTickets : 0
 
   // 7 ngày tới (kể cả hôm nay)
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = addDays(new Date(), i)
     const key = dkey(d)
-    return { key, label: WDS[d.getDay()], date: d.getDate() + '/' + (d.getMonth() + 1), n: live.filter((a) => a.date === key).length }
+    return { key, label: WDS[d.getDay()], date: d.getDate() + '/' + (d.getMonth() + 1), n: upcoming.filter((a) => a.date === key).length }
   })
   const maxDay = Math.max(1, ...days.map((d) => d.n))
 
   // Dịch vụ được đặt nhiều nhất
   const bySvc = {}
+  const svcName = {}
   live.forEach((a) => {
     bySvc[a.svc] = (bySvc[a.svc] || 0) + 1
+    svcName[a.svc] = a.svcName
   })
   const top = Object.entries(bySvc)
     .sort((a, b) => b[1] - a[1])
@@ -51,7 +53,7 @@ export default function Dashboard({ go }) {
         <div className="card kpi">
           <small>Lịch hôm nay</small>
           <b>{todayCount}</b>
-          <span>Không tính lịch đã hủy</span>
+                  <span>Còn chờ đến khám hôm nay</span>
         </div>
         <div className="card kpi">
           <small>Lịch sắp tới</small>
@@ -65,7 +67,7 @@ export default function Dashboard({ go }) {
         </div>
         <div className="card kpi">
           <small>Khách hàng</small>
-          <b>{customers.length}</b>
+          <b>{stats ? stats.customers : 0}</b>
           <span>
             {openTickets ? (
               <button className="link" onClick={() => go('tickets')}>
@@ -100,7 +102,7 @@ export default function Dashboard({ go }) {
               {top.map(([id, n]) => (
                 <div className="hbar" key={id}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, fontSize: 14 }}>
-                                       <span>{svcOf(id)?.name || id}</span>
+                    <span>{svcName[id] || id}</span>
                     <b>{n}</b>
                   </div>
                   <div className="t">
@@ -145,10 +147,10 @@ export default function Dashboard({ go }) {
                     <td>
                       <b>{a.user.name}</b>
                       <br />
-                      <small className="hint">{a.user.phone || a.user.email}</small>
+                      <small className="hint">{a.user.phone || '—'}</small>
                     </td>
                     <td>
-                                           {svcOf(a.svc)?.name}
+                      {a.svcName}
                       <br />
                       <small className="hint">Mã {a.id}</small>
                     </td>
@@ -157,7 +159,7 @@ export default function Dashboard({ go }) {
                       <br />
                       <small className="hint">{longDate(a.date)}</small>
                     </td>
-                                        <td>{staffOf(a.staff)?.name || '—'}</td>
+                    <td>{staffOf(a.staff)?.name || '—'}</td>
                     <td className="price">{vnd(a.total)}</td>
                   </tr>
                 ))}

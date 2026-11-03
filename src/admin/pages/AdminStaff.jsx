@@ -7,37 +7,40 @@ import { norm } from '../../utils/helpers.js'
 
 const BLANK = { name: '', role: '', cats: [], years: 5, rating: 5 }
 
+// Dữ liệu gửi lên backend cho một nhân sự
+const staffBody = (s, active) => ({
+  name: String(s.name).trim(),
+  role: String(s.role || '').trim(),
+  cats: s.cats,
+  rating: Number(s.rating),
+  years: Number(s.years),
+  active,
+})
+
 // Hộp thoại thêm / sửa bác sĩ, nhân viên
 function Form({ init, onClose }) {
-  const { cats, saveCatalog } = useAdmin()
+  const { cats, saveStaff } = useAdmin()
   const toast = useToast()
   const isNew = !init.id
   const [f, setF] = useState({ ...BLANK, ...init })
   const [err, setErr] = useState('')
-  const [confirmDel, setConfirmDel] = useState(false)
+  const [busy, setBusy] = useState(false)
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
   const toggleCat = (id) =>
     setF({ ...f, cats: f.cats.includes(id) ? f.cats.filter((c) => c !== id) : [...f.cats, id] })
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     const years = Number(f.years)
     if (!f.name.trim()) return setErr('Nhập họ tên.')
     if (!f.role.trim()) return setErr('Nhập chức danh, ví dụ: Bác sĩ nhi khoa.')
     if (!f.cats.length) return setErr('Chọn ít nhất một chuyên khoa phụ trách.')
     if (!Number.isInteger(years) || years < 0 || years > 60) return setErr('Số năm kinh nghiệm từ 0 đến 60.')
-    const s = { ...init, name: f.name.trim(), role: f.role.trim(), cats: f.cats, years, rating: f.rating }
-    saveCatalog((c) => ({
-      ...c,
-      staff: isNew ? [...c.staff, { ...s, id: 'st' + Date.now().toString(36) }] : c.staff.map((x) => (x.id === init.id ? s : x)),
-    }))
+    setBusy(true)
+    const r = await saveStaff(init.id || null, staffBody({ ...f, years }, init.active ?? true))
+    setBusy(false)
+    if (!r.ok) return setErr(r.error)
     toast(isNew ? 'Đã thêm nhân sự' : 'Đã lưu thông tin')
-    onClose()
-  }
-
-  const del = () => {
-    saveCatalog((c) => ({ ...c, staff: c.staff.filter((x) => x.id !== init.id) }))
-    toast('Đã xóa nhân sự')
     onClose()
   }
 
@@ -68,35 +71,33 @@ function Form({ init, onClose }) {
         </div>
         {err && <p className="err" role="alert">{err}</p>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" type="submit">
-            {isNew ? 'Thêm' : 'Lưu thay đổi'}
+          <button className="btn btn-primary" type="submit" disabled={busy}>
+            {busy ? 'Đang lưu...' : isNew ? 'Thêm' : 'Lưu thay đổi'}
           </button>
-          {!isNew &&
-            (confirmDel ? (
-              <button className="btn btn-danger" type="button" onClick={del}>
-                Xác nhận xóa
-              </button>
-            ) : (
-              <button className="btn btn-line" type="button" onClick={() => setConfirmDel(true)}>
-                Xóa
-              </button>
-            ))}
         </div>
+        {!isNew && (
+          <p className="hint" style={{ marginTop: 10 }}>
+            Nhân sự đã có lịch hẹn không xóa hẳn được. Khi nghỉ việc, hãy tắt công tắc "Đang làm việc" ở danh sách.
+          </p>
+        )}
       </form>
     </Modal>
   )
 }
 
-// Màn Bác sĩ, nhân viên: tìm, thêm, sửa, bật/tắt làm việc, xóa
+// Màn Bác sĩ, nhân viên: tìm, thêm, sửa, bật/tắt làm việc
 export default function AdminStaff() {
-  const { staff, cats, saveCatalog } = useAdmin()
+  const { staff, cats, saveStaff } = useAdmin()
+  const toast = useToast()
   const [q, setQ] = useState('')
   const [edit, setEdit] = useState(null)
 
   const key = norm(q.trim())
   const list = staff.filter((s) => !key || norm(s.name + ' ' + s.role).includes(key))
-  const toggle = (id, on) =>
-    saveCatalog((c) => ({ ...c, staff: c.staff.map((s) => (s.id === id ? { ...s, off: !on } : s)) }))
+  const toggle = async (s, on) => {
+    const r = await saveStaff(s.id, staffBody(s, on))
+    toast(r.ok ? (on ? 'Đã bật làm việc' : 'Đã chuyển sang tạm nghỉ') : r.error)
+  }
   const catNames = (s) => s.cats.map((id) => cats.find((c) => c.id === id)?.name).filter(Boolean)
 
   return (
@@ -139,7 +140,7 @@ export default function AdminStaff() {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}>
-                  <Toggle on={!s.off} onChange={(on) => toggle(s.id, on)} label={'Đang làm việc: ' + s.name} />
+                  <Toggle on={!s.off} onChange={(on) => toggle(s, on)} label={'Đang làm việc: ' + s.name} />
                   {s.off ? 'Tạm nghỉ' : 'Đang làm việc'}
                 </span>
                 <button className="btn btn-line btn-sm" onClick={() => setEdit(s)}>

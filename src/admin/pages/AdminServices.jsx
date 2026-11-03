@@ -6,37 +6,40 @@ import { norm, vnd } from '../../utils/helpers.js'
 
 const BLANK = { name: '', cat: 'noi', dur: 30, price: 150000, desc: '', hot: false }
 
+// Dữ liệu gửi lên backend cho một dịch vụ
+const serviceBody = (s, active) => ({
+  name: String(s.name).trim(),
+  cat: s.cat,
+  dur: Number(s.dur),
+  price: Number(s.price),
+  hot: !!s.hot,
+  desc: String(s.desc || '').trim(),
+  inc: s.inc || [],
+  active,
+})
+
 // Hộp thoại thêm / sửa dịch vụ
 function Form({ init, onClose }) {
-  const { cats, saveCatalog } = useAdmin()
+  const { cats, saveService } = useAdmin()
   const toast = useToast()
   const isNew = !init.id
   const [f, setF] = useState({ ...BLANK, ...init })
   const [err, setErr] = useState('')
-  const [confirmDel, setConfirmDel] = useState(false)
+  const [busy, setBusy] = useState(false)
   const set = (k) => (e) => setF({ ...f, [k]: e.target.type === 'checkbox' ? e.target.checked : e.target.value })
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     const dur = Number(f.dur)
     const price = Number(f.price)
     if (!f.name.trim()) return setErr('Nhập tên dịch vụ.')
-    if (!Number.isInteger(dur) || dur < 10 || dur > 240) return setErr('Thời lượng từ 10 đến 240 phút.')
+    if (!Number.isInteger(dur) || dur < 15 || dur > 270) return setErr('Thời lượng từ 15 đến 270 phút.')
     if (!Number.isFinite(price) || price < 0) return setErr('Giá không hợp lệ.')
-    const svc = { ...init, name: f.name.trim(), cat: f.cat, dur, price, desc: f.desc.trim(), hot: !!f.hot, inc: init.inc || [] }
-    saveCatalog((c) => ({
-      ...c,
-      services: isNew
-        ? [...c.services, { ...svc, id: 's' + Date.now().toString(36) }]
-        : c.services.map((s) => (s.id === init.id ? svc : s)),
-    }))
+    setBusy(true)
+    const r = await saveService(init.id || null, serviceBody({ ...init, ...f, dur, price }, init.active ?? true))
+    setBusy(false)
+    if (!r.ok) return setErr(r.error)
     toast(isNew ? 'Đã thêm dịch vụ' : 'Đã lưu dịch vụ')
-    onClose()
-  }
-
-  const del = () => {
-    saveCatalog((c) => ({ ...c, services: c.services.filter((s) => s.id !== init.id) }))
-    toast('Đã xóa dịch vụ')
     onClose()
   }
 
@@ -60,7 +63,7 @@ function Form({ init, onClose }) {
         <div className="formgrid">
           <div className="field">
             <label htmlFor="sv-dur">Thời lượng (phút)</label>
-            <input id="sv-dur" type="number" min="10" max="240" step="5" value={f.dur} onChange={set('dur')} />
+            <input id="sv-dur" type="number" min="15" max="270" step="5" value={f.dur} onChange={set('dur')} />
           </div>
           <div className="field">
             <label htmlFor="sv-price">Giá (đồng)</label>
@@ -77,28 +80,24 @@ function Form({ init, onClose }) {
         </label>
         {err && <p className="err" role="alert">{err}</p>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" type="submit">
-            {isNew ? 'Thêm dịch vụ' : 'Lưu thay đổi'}
+          <button className="btn btn-primary" type="submit" disabled={busy}>
+            {busy ? 'Đang lưu...' : isNew ? 'Thêm dịch vụ' : 'Lưu thay đổi'}
           </button>
-          {!isNew &&
-            (confirmDel ? (
-              <button className="btn btn-danger" type="button" onClick={del}>
-                Xác nhận xóa
-              </button>
-            ) : (
-              <button className="btn btn-line" type="button" onClick={() => setConfirmDel(true)}>
-                Xóa
-              </button>
-            ))}
         </div>
+        {!isNew && (
+          <p className="hint" style={{ marginTop: 10 }}>
+            Dịch vụ đã có lịch hẹn không xóa hẳn được. Muốn ngừng cung cấp, hãy tắt công tắc "Hiển thị" ở danh sách.
+          </p>
+        )}
       </form>
     </Modal>
   )
 }
 
-// Màn Dịch vụ: tìm, lọc chuyên khoa, thêm, sửa, ẩn/hiện, xóa
+// Màn Dịch vụ: tìm, lọc chuyên khoa, thêm, sửa, ẩn/hiện
 export default function AdminServices() {
-  const { services, cats, catOf, saveCatalog } = useAdmin()
+  const { services, cats, catOf, saveService } = useAdmin()
+  const toast = useToast()
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('all')
   const [edit, setEdit] = useState(null)
@@ -107,8 +106,10 @@ export default function AdminServices() {
   const list = services.filter(
     (s) => (cat === 'all' || s.cat === cat) && (!key || norm(s.name + ' ' + (s.desc || '')).includes(key))
   )
-  const toggle = (id, on) =>
-    saveCatalog((c) => ({ ...c, services: c.services.map((s) => (s.id === id ? { ...s, off: !on } : s)) }))
+  const toggle = async (s, on) => {
+    const r = await saveService(s.id, serviceBody(s, on))
+    toast(r.ok ? (on ? 'Đã hiện dịch vụ' : 'Đã ẩn dịch vụ khỏi trang đặt lịch') : r.error)
+  }
 
   return (
     <>
@@ -163,7 +164,7 @@ export default function AdminServices() {
                     <td className="num">{s.dur} phút</td>
                     <td className="num price">{vnd(s.price)}</td>
                     <td>
-                      <Toggle on={!s.off} onChange={(v) => toggle(s.id, v)} label={'Hiển thị ' + s.name} />
+                      <Toggle on={!s.off} onChange={(v) => toggle(s, v)} label={'Hiển thị ' + s.name} />
                     </td>
                     <td>
                       <button className="btn btn-line btn-sm" onClick={() => setEdit(s)}>

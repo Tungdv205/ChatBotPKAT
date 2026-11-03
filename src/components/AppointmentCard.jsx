@@ -1,5 +1,5 @@
 import Icon from './Icon.jsx'
-import { canChange, eff, staffById, svcById } from '../utils/appointments.js'
+import { apptSvc, canChange, eff, staffById } from '../utils/appointments.js'
 import { longDate, vnd } from '../utils/helpers.js'
 
 // Hàng 5 sao để đánh giá lịch đã khám xong
@@ -18,7 +18,7 @@ function Stars({ appt, onRate }) {
 
 // Thẻ một lịch hẹn. Nút bấm thay đổi theo trạng thái: sắp tới, đã xong, đã hủy.
 export default function AppointmentCard({ appt, confirming, on }) {
-  const s = svcById(appt.svc)
+  const s = apptSvc(appt)
   const st = staffById(appt.staff)
   const e = eff(appt)
 
@@ -95,9 +95,9 @@ export default function AppointmentCard({ appt, confirming, on }) {
         </span>
       </div>
       {appt.note && <p className="hint">Ghi chú: {appt.note}</p>}
-            {appt.cancelledBy === 'clinic' && (
+      {appt.status === 'cancelled' && appt.cancelReason && (
         <p className="hint" style={{ color: 'var(--bad-text)' }}>
-          Phòng khám đã hủy lịch này{appt.cancelReason ? '. Lý do: ' + appt.cancelReason : '.'}
+          Phòng khám đã hủy lịch này. Lý do: {appt.cancelReason}
         </p>
       )}
       <div className="meta">

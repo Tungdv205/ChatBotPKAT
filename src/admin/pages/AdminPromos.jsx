@@ -6,19 +6,33 @@ import { norm, vnd } from '../../utils/helpers.js'
 
 const BLANK = { code: '', title: '', type: 'pct', val: 10, max: 100000, min: 0, cat: '', note: '' }
 
+// Dữ liệu gửi lên backend cho một mã ưu đãi
+const voucherBody = (v, active) => ({
+  code: v.code,
+  title: String(v.title).trim(),
+  type: v.type,
+  val: Number(v.val),
+  max: Number(v.max),
+  min: Number(v.min),
+  cat: v.cat || null,
+  note: String(v.note || '').trim(),
+  active,
+})
+
 const describe = (v) => (v.type === 'pct' ? 'Giảm ' + v.val + '%, tối đa ' + vnd(v.max) : 'Giảm ' + vnd(v.val))
 
 // Hộp thoại thêm / sửa mã ưu đãi
 function Form({ init, onClose }) {
-  const { vouchers, cats, saveCatalog } = useAdmin()
+  const { vouchers, cats, saveVoucher, removeVoucher } = useAdmin()
   const toast = useToast()
   const isNew = !init.code
   const [f, setF] = useState({ ...BLANK, ...init, cat: init.cat || '' })
   const [err, setErr] = useState('')
   const [confirmDel, setConfirmDel] = useState(false)
+  const [busy, setBusy] = useState(false)
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
     const code = f.code.trim().toUpperCase()
     const val = Number(f.val)
@@ -31,27 +45,22 @@ function Form({ init, onClose }) {
     if (f.type === 'pct' && val > 100) return setErr('Giảm theo phần trăm không quá 100.')
     if (f.type === 'pct' && !(max > 0)) return setErr('Nhập mức giảm tối đa.')
     if (!(min >= 0)) return setErr('Đơn tối thiểu không hợp lệ.')
-    const v = {
-      ...init,
-      code,
-      title: f.title.trim(),
-      type: f.type,
-      val,
-      max: f.type === 'pct' ? max : val,
-      min,
-      cat: f.cat || null,
-      note: f.note.trim(),
-    }
-    saveCatalog((c) => ({
-      ...c,
-      vouchers: isNew ? [...c.vouchers, v] : c.vouchers.map((x) => (x.code === init.code ? v : x)),
-    }))
+    setBusy(true)
+    const r = await saveVoucher(
+      isNew ? null : init.code,
+      voucherBody({ code, title: f.title, type: f.type, val, max: f.type === 'pct' ? max : val, min, cat: f.cat, note: f.note }, init.active ?? true)
+    )
+    setBusy(false)
+    if (!r.ok) return setErr(r.error)
     toast(isNew ? 'Đã thêm mã ưu đãi' : 'Đã lưu mã ưu đãi')
     onClose()
   }
 
-  const del = () => {
-    saveCatalog((c) => ({ ...c, vouchers: c.vouchers.filter((x) => x.code !== init.code) }))
+  const del = async () => {
+    setBusy(true)
+    const r = await removeVoucher(init.code)
+    setBusy(false)
+    if (!r.ok) return setErr(r.error)
     toast('Đã xóa mã ưu đãi')
     onClose()
   }
@@ -116,8 +125,8 @@ function Form({ init, onClose }) {
         </div>
         {err && <p className="err" role="alert">{err}</p>}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <button className="btn btn-primary" type="submit">
-            {isNew ? 'Thêm mã' : 'Lưu thay đổi'}
+          <button className="btn btn-primary" type="submit" disabled={busy}>
+            {busy ? 'Đang lưu...' : isNew ? 'Thêm mã' : 'Lưu thay đổi'}
           </button>
           {!isNew &&
             (confirmDel ? (
@@ -137,14 +146,17 @@ function Form({ init, onClose }) {
 
 // Màn Ưu đãi: tìm, thêm, sửa, bật/tắt, xóa mã giảm giá
 export default function AdminPromos() {
-  const { vouchers, catOf, saveCatalog } = useAdmin()
+  const { vouchers, catOf, saveVoucher } = useAdmin()
+  const toast = useToast()
   const [q, setQ] = useState('')
   const [edit, setEdit] = useState(null)
 
   const key = norm(q.trim())
   const list = vouchers.filter((v) => !key || norm(v.code + ' ' + v.title).includes(key))
-  const toggle = (code, on) =>
-    saveCatalog((c) => ({ ...c, vouchers: c.vouchers.map((v) => (v.code === code ? { ...v, off: !on } : v)) }))
+  const toggle = async (v, on) => {
+    const r = await saveVoucher(v.code, voucherBody(v, on))
+    toast(r.ok ? (on ? 'Đã bật mã ' + v.code : 'Đã tạm dừng mã ' + v.code) : r.error)
+  }
 
   return (
     <>
@@ -196,7 +208,7 @@ export default function AdminPromos() {
                       )}
                     </td>
                     <td>
-                      <Toggle on={!v.off} onChange={(on) => toggle(v.code, on)} label={'Bật mã ' + v.code} />
+                      <Toggle on={!v.off} onChange={(on) => toggle(v, on)} label={'Bật mã ' + v.code} />
                     </td>
                     <td>
                       <button className="btn btn-line btn-sm" onClick={() => setEdit(v)}>

@@ -3,7 +3,7 @@ import ServiceCard from '../components/ServiceCard.jsx'
 import PromoCard from '../components/PromoCard.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { CATS, SERVICES, VOUCHERS } from '../data/catalog.js'
-import { canChange, staffById, svcById, upcomingList } from '../utils/appointments.js'
+  import { apptSvc, canChange, staffById, upcomingList } from '../utils/appointments.js'
 import { dkey, longDate, parseKey, WD } from '../utils/helpers.js'
 
 // app: các hành động do App cấp (go, startBooking, openCategory, openService, reschedule, copyCode, usePromo)
@@ -137,7 +137,7 @@ function NextAppointment({ next, app }) {
       </section>
     )
   }
-  const s = svcById(next.svc)
+  const s = apptSvc(next)
   const st = staffById(next.staff)
   const diff = Math.round((parseKey(next.date) - parseKey(dkey(new Date()))) / 86400000)
   const cd = diff === 0 ? 'Hôm nay' : diff === 1 ? 'Ngày mai' : 'Còn ' + diff + ' ngày'

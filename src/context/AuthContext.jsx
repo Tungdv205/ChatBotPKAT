@@ -1,15 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { api, getToken, setToken, setUnauthorizedHandler } from '../api/client.js'
 
-// Tài khoản nay nằm trên backend (SQL Server). Trình duyệt chỉ giữ token đăng nhập.
-// Hai dòng dưới giữ lại cho trang quản trị cũ, sẽ bỏ khi trang quản trị nối backend.
-export { KEY, loadDb } from './LegacyAuth.jsx'
-
 const AuthContext = createContext(null)
 export const useAuth = () => useContext(AuthContext)
 
-// Dữ liệu người dùng từ backend. notifs và tickets nạp từ backend sau khi đăng nhập;
-// appts tạm để rỗng, các màn đặt lịch vẫn chạy với dữ liệu tạm trong bộ nhớ (sẽ nối ở bước sau).
+// Dữ liệu người dùng từ backend. appts, notifs, tickets được nạp từ backend ngay sau khi đăng nhập.
 const toUser = (d) => ({
   ...d,
   phone: d.phone || '',
@@ -22,9 +17,7 @@ const toUser = (d) => ({
 
 // Giữ lại dữ liệu tạm khi chỉ cập nhật hồ sơ
 const keepExtras = (u, d) => ({ ...toUser(d), appts: u.appts, notifs: u.notifs, tickets: u.tickets })
-
-const fail = (e) => ({ ok: false, error: e.message || 'Có lỗi xảy ra, vui lòng thử lại.' })
-
+const fail = (e) => ({ ok: false, status: e.status, error: e.message || 'Có lỗi xảy ra, vui lòng thử lại.' })
 export function AuthProvider({ children }) {
   const [token, setTok] = useState(getToken)
   const [user, setUser] = useState(null)
@@ -61,11 +54,15 @@ export function AuthProvider({ children }) {
     }
   }, [token])
 
-  // Nạp thông báo và yêu cầu hỗ trợ từ backend (lịch hẹn sẽ nạp ở bước sau)
+  // Nạp lịch hẹn, thông báo và yêu cầu hỗ trợ từ backend
   const refreshExtras = useCallback(async () => {
     try {
-      const [notifs, tickets] = await Promise.all([api('/api/notifications'), api('/api/tickets')])
-      setUser((u) => (u ? { ...u, notifs, tickets } : u))
+      const [appts, notifs, tickets] = await Promise.all([
+        api('/api/appointments'),
+        api('/api/notifications'),
+        api('/api/tickets'),
+      ])
+      setUser((u) => (u ? { ...u, appts, notifs, tickets } : u))
     } catch (e) {
       /* lỗi mạng thì giữ dữ liệu cũ */
     }
@@ -227,10 +224,66 @@ export function AuthProvider({ children }) {
     [refreshExtras]
   )
 
-  // Tạm thời: các màn Đặt lịch và Lịch hẹn vẫn sửa dữ liệu trong bộ nhớ.
-  // Sẽ được nối backend ở bước sau, hàm này sẽ bị bỏ.
-  const updateUser = useCallback((fn) => {
-    setUser((u) => (u ? fn(u) : u))
+  // Thay một lịch hẹn trong danh sách bằng bản backend vừa trả về (hoặc thêm vào nếu là lịch mới)
+  const putAppt = (appt) =>
+    setUser((u) => {
+      if (!u) return u
+      const has = u.appts.some((x) => x.id === appt.id)
+      return { ...u, appts: has ? u.appts.map((x) => (x.id === appt.id ? appt : x)) : [appt, ...u.appts] }
+    })
+
+  // Đặt lịch mới. payload: { svc, staff, date, time, code, note }. Backend kiểm tra lại mọi luật.
+  const createAppt = useCallback(
+    async (payload) => {
+      try {
+        const appt = await api('/api/appointments', { method: 'POST', body: payload })
+        putAppt(appt)
+        refreshExtras() // backend vừa tạo thông báo "Đặt lịch thành công"
+        return { ok: true, appt }
+      } catch (e) {
+        return fail(e)
+      }
+    },
+    [refreshExtras]
+  )
+
+  // Đổi lịch. payload: { staff, date, time }
+  const rescheduleAppt = useCallback(
+    async (id, payload) => {
+      try {
+        const appt = await api('/api/appointments/' + id + '/reschedule', { method: 'PUT', body: payload })
+        putAppt(appt)
+        refreshExtras()
+        return { ok: true, appt }
+      } catch (e) {
+        return fail(e)
+      }
+    },
+    [refreshExtras]
+  )
+
+  const cancelAppt = useCallback(
+    async (id) => {
+      try {
+        const appt = await api('/api/appointments/' + id + '/cancel', { method: 'POST', body: {} })
+        putAppt(appt)
+        refreshExtras()
+        return { ok: true, appt }
+      } catch (e) {
+        return fail(e)
+      }
+    },
+    [refreshExtras]
+  )
+
+  const rateAppt = useCallback(async (id, stars) => {
+    try {
+      const appt = await api('/api/appointments/' + id + '/rating', { method: 'POST', body: { stars, comment: '' } })
+      putAppt(appt)
+      return { ok: true, appt }
+    } catch (e) {
+      return fail(e)
+    }
   }, [])
 
   const value = useMemo(
@@ -248,7 +301,10 @@ export function AuthProvider({ children }) {
       markRead,
       markAllRead,
       addTicket,
-      updateUser,
+      createAppt,
+      rescheduleAppt,
+      cancelAppt,
+      rateAppt,
     }),
     [
       user,
@@ -264,7 +320,10 @@ export function AuthProvider({ children }) {
       markRead,
       markAllRead,
       addTicket,
-      updateUser,
+      createAppt,
+      rescheduleAppt,
+      cancelAppt,
+      rateAppt,
     ]
   )
 

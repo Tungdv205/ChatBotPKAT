@@ -11,9 +11,11 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import vn.anhthu.hengio.config.ApiException;
 import vn.anhthu.hengio.model.Appointment;
 import vn.anhthu.hengio.model.ApptStatus;
@@ -193,8 +195,11 @@ public class AdminService {
         if (a.getStatus() != ApptStatus.UPCOMING) {
             throw ApiException.bad("Chỉ hoàn thành được lịch đang ở trạng thái sắp tới.");
         }
-        a.setStatus(ApptStatus.DONE);
+                      a.setStatus(ApptStatus.DONE);
         appts.save(a);
+        notifs.push(a.getUserId(), "booking", "Lịch hẹn đã hoàn thành",
+                a.getServiceName() + ", mã " + a.getId() + ", ngày " + a.getDate().format(DATE_VN)
+                        + ". Cảm ơn bạn đã đến khám. Vào Lịch hẹn, mục Đã khám để đánh giá dịch vụ.");
         audit.log(admin.getEmail(), "HOAN_THANH_LICH", a.getId(), null);
     }
 

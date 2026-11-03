@@ -1,13 +1,13 @@
 import { VOUCHERS } from '../../data/catalog.js'
 import { staffById } from '../../utils/appointments.js'
-import { calcDiscount, currentTotals, pickStaff } from '../../utils/booking.js'
-import { longDate, mins, vnd } from '../../utils/helpers.js'
+import { calcDiscount, currentTotals } from '../../utils/booking.js'
+import { longDate, vnd } from '../../utils/helpers.js'
 
 // Bước 4: kiểm tra thông tin, nhập mã ưu đãi, ghi chú cho bác sĩ
 export default function Step4Confirm({ svc, b, set, user, onGoProfile }) {
   const t = currentTotals(user.appts, b, svc)
-  const staffId = b.staff === 'any' ? pickStaff(user.appts, svc, b.date, mins(b.time), b.editId) : b.staff
-  const st = staffId ? staffById(staffId) : null
+  // Khách không chọn bác sĩ: phòng khám tự xếp bác sĩ rảnh khi xác nhận
+  const st = b.staff !== 'any' ? staffById(b.staff) : null
 
   const applyCode = () => {
     const code = (b.codeInput || '').trim().toUpperCase()
@@ -31,7 +31,7 @@ export default function Step4Confirm({ svc, b, set, user, onGoProfile }) {
           </div>
           <div>
             <dt>Bác sĩ</dt>
-            <dd>{st ? st.name : 'Chưa xác định'}</dd>
+            <dd>{st ? st.name : 'Phòng khám xếp bác sĩ phù hợp'}</dd>
           </div>
           <div>
             <dt>Thời gian</dt>
@@ -119,17 +119,21 @@ export default function Step4Confirm({ svc, b, set, user, onGoProfile }) {
         </div>
       )}
 
-      <div className="card field" style={{ margin: 0 }}>
-        <label htmlFor="note">
-          Ghi chú cho bác sĩ: triệu chứng, tiền sử, thuốc đang dùng (không bắt buộc)
-        </label>
-        <textarea
-          id="note"
-          placeholder="Ví dụ: tôi đang dùng thuốc huyết áp, hoặc dị ứng penicillin"
-          value={b.note}
-          onChange={(e) => set({ note: e.target.value })}
-        />
-      </div>
+      {/* Đổi lịch chỉ đổi ngày giờ, ghi chú giữ như cũ */}
+      {!b.editId && (
+        <div className="card field" style={{ margin: 0 }}>
+          <label htmlFor="note">
+            Ghi chú cho bác sĩ: triệu chứng, tiền sử, thuốc đang dùng (không bắt buộc)
+          </label>
+          <textarea
+            id="note"
+            placeholder="Ví dụ: tôi đang dùng thuốc huyết áp, hoặc dị ứng penicillin"
+            maxLength={500}
+            value={b.note}
+            onChange={(e) => set({ note: e.target.value })}
+          />
+        </div>
+      )}
     </>
   )
 }

@@ -8,11 +8,15 @@ export default function AdminLogin() {
   const [f, setF] = useState({ email: '', pass: '' })
   const [show, setShow] = useState(false)
   const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    const r = login(f.email.trim().toLowerCase(), f.pass)
+    if (!f.email.trim() || !f.pass) return setErr('Nhập email và mật khẩu quản trị.')
+    setBusy(true)
+    const r = await login(f.email.trim().toLowerCase(), f.pass)
+    setBusy(false)
     if (!r.ok) setErr(r.error)
   }
 
@@ -28,20 +32,6 @@ export default function AdminLogin() {
         <div className="auth-card">
           <h2>Đăng nhập quản trị</h2>
           <p className="sub">Dành cho nhân viên và quản lý của phòng khám.</p>
-          <div className="demo-box">
-            <span>
-              Tài khoản dùng thử
-              <br />
-              <b>admin@henlich.vn</b> · <b>admin123</b>
-            </span>
-            <button
-              type="button"
-              className="btn btn-sm btn-line"
-              onClick={() => setF({ email: 'admin@henlich.vn', pass: 'admin123' })}
-            >
-              Điền sẵn
-            </button>
-          </div>
           <form onSubmit={submit} noValidate>
             <div className="field">
               <label htmlFor="a-email">Email</label>
@@ -63,7 +53,9 @@ export default function AdminLogin() {
               </div>
             </div>
             <p className="err" role="alert">{err}</p>
-            <button className="btn btn-primary btn-block" type="submit">Đăng nhập</button>
+            <button className="btn btn-primary btn-block" type="submit" disabled={busy}>
+              {busy ? 'Đang đăng nhập...' : 'Đăng nhập'}
+            </button>
           </form>
           <p className="auth-alt">
             <a className="link" href="/">Về trang đặt lịch cho khách</a>
