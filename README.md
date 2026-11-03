@@ -7,7 +7,7 @@ npm install
 npm run dev
 ```
 
-Mở địa chỉ hiện ra (thường là http://localhost:5173). Tài khoản dùng thử: `demo@henlich.vn` / `123456`.
+Mở địa chỉ hiện ra (https://chat-bot-pkat.vercel.app). Tài khoản dùng thử: `demo@henlich.vn` / `123456`.
 
 ## Cấu trúc
 
