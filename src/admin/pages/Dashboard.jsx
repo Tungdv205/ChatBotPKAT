@@ -11,7 +11,7 @@ export default function Dashboard({ go }) {
   const upcoming = appts.filter((a) => eff(a) === 'upcoming').sort((a, b) => startOf(a) - startOf(b))
   const done = appts.filter((a) => eff(a) === 'done')
   const cancelled = appts.filter((a) => a.status === 'cancelled')
-    const todayCount = upcoming.filter((a) => a.date === today).length
+  const todayCount = upcoming.filter((a) => a.date === today).length
   const revenue = done.reduce((s, a) => s + a.total, 0)
   const openTickets = stats ? stats.openTickets : 0
 
@@ -53,7 +53,7 @@ export default function Dashboard({ go }) {
         <div className="card kpi">
           <small>Lịch hôm nay</small>
           <b>{todayCount}</b>
-                  <span>Còn chờ đến khám hôm nay</span>
+          <span>Còn chờ đến khám hôm nay</span>
         </div>
         <div className="card kpi">
           <small>Lịch sắp tới</small>
