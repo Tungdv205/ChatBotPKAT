@@ -54,20 +54,6 @@ function LoginForm({ go }) {
     <>
       <h2>Đăng nhập</h2>
       <p className="sub">Quản lý lịch hẹn của bạn ở một nơi.</p>
-      <div className="demo-box">
-        <span>
-          Tài khoản dùng thử
-          <br />
-          <b>demo@henlich.vn</b> · <b>demo1234</b>
-        </span>
-        <button
-          type="button"
-          className="btn btn-sm btn-line"
-          onClick={() => setF({ email: 'demo@henlich.vn', pass: 'demo1234' })}
-        >
-          Điền sẵn
-        </button>
-      </div>
       <form onSubmit={submit} noValidate>
         <div className="field">
           <label htmlFor="l-email">Email</label>
