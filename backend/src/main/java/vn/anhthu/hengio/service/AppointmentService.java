@@ -17,6 +17,8 @@ import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import vn.anhthu.hengio.config.ApiException;
@@ -25,11 +27,13 @@ import vn.anhthu.hengio.model.ApptStatus;
 import vn.anhthu.hengio.model.Category;
 import vn.anhthu.hengio.model.ServiceItem;
 import vn.anhthu.hengio.model.Staff;
+import vn.anhthu.hengio.model.UserAccount;
 import vn.anhthu.hengio.model.Voucher;
 import vn.anhthu.hengio.repo.AppointmentRepository;
 import vn.anhthu.hengio.repo.CategoryRepository;
 import vn.anhthu.hengio.repo.ServiceRepository;
 import vn.anhthu.hengio.repo.StaffRepository;
+import vn.anhthu.hengio.repo.UserRepository;
 import vn.anhthu.hengio.repo.VoucherRepository;
 import vn.anhthu.hengio.web.dto.AppointmentDtos.ApptDto;
 import vn.anhthu.hengio.web.dto.AppointmentDtos.CreateReq;
@@ -40,12 +44,14 @@ import vn.anhthu.hengio.web.dto.AppointmentDtos.SlotsRes;
 import vn.anhthu.hengio.web.dto.AppointmentDtos.VoucherRes;
 
 /**
- * Toàn bộ luật đặt lịch chạy ở server (giao diện chỉ hiển thị): giờ làm việc, nghỉ trưa, trùng giờ,
- * bác sĩ rảnh, mã ưu đãi, hạn đổi/hủy. Server tự tính giá, không tin số tiền do giao diện gửi lên.
+ * Toàn bộ luật đặt lịch chạy ở server (giao diện chỉ hiển thị): giờ làm việc,
+ * nghỉ trưa, trùng giờ, bác sĩ rảnh, mã ưu đãi, hạn đổi/hủy. Server tự tính
+ * giá, không tin số tiền do giao diện gửi lên.
  */
 @Service
 public class AppointmentService {
-        public static final String WELCOME_CODE = "CHAOMUNG";
+
+    public static final String WELCOME_CODE = "CHAOMUNG";
     static final ZoneId ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     static final int OPEN = 480;          // 08:00
     static final int CLOSE = 1080;        // 18:00
@@ -58,7 +64,9 @@ public class AppointmentService {
     static final int MIN_LEAD_MIN = 60;   // đặt trước ít nhất 1 giờ
     static final int CHANGE_LEAD_HOURS = 2; // đổi/hủy trước giờ hẹn ít nhất 2 giờ
 
-    /** Một hoặc nhiều dịch vụ gộp lại thành một lần khám. */
+    /**
+     * Một hoặc nhiều dịch vụ gộp lại thành một lần khám.
+     */
     record Combo(String key, String name, List<String> cats, int dur, long price) {}
 
     private final AppointmentRepository appts;
@@ -66,25 +74,29 @@ public class AppointmentService {
     private final StaffRepository staff;
     private final VoucherRepository vouchers;
     private final CategoryRepository categories;
-        private final NotificationService notifs;
+    private final NotificationService notifs;
+    private final UserRepository users;
+    private final EmailService mail;
     private final TransactionTemplate tx;
     private final SecureRandom random = new SecureRandom();
     private final Object lock = new Object(); // tuần tự hóa việc tạo/đổi lịch để không bị đặt trùng cùng lúc
 
-     public AppointmentService(AppointmentRepository appts, ServiceRepository services, StaffRepository staff,
-                              VoucherRepository vouchers, CategoryRepository categories,
-                              NotificationService notifs, PlatformTransactionManager txManager) {
+    public AppointmentService(AppointmentRepository appts, ServiceRepository services, StaffRepository staff,
+            VoucherRepository vouchers, CategoryRepository categories,
+            NotificationService notifs, UserRepository users, EmailService mail,
+            PlatformTransactionManager txManager) {
         this.appts = appts;
         this.services = services;
         this.staff = staff;
         this.vouchers = vouchers;
         this.categories = categories;
         this.notifs = notifs;
+        this.users = users;
+        this.mail = mail;
         this.tx = new TransactionTemplate(txManager);
     }
 
     // ---------- Đọc ----------
-
     @Transactional
     public List<ApptDto> list(Long userId) {
         List<Appointment> list = appts.findByUserIdOrderByDateDescStartMinDesc(userId);
@@ -127,7 +139,6 @@ public class AppointmentService {
     }
 
     // ---------- Ghi ----------
-
     public ApptDto create(Long userId, CreateReq r) {
         synchronized (lock) {
             return tx.execute(st -> doCreate(userId, r));
@@ -146,7 +157,7 @@ public class AppointmentService {
         requireUpcoming(a);
         requireLead(a, "Chỉ hủy được lịch trước giờ hẹn ít nhất " + CHANGE_LEAD_HOURS + " giờ. Vui lòng gọi phòng khám.");
         a.setStatus(ApptStatus.CANCELLED);
-                a.setCancelReason(reason == null || reason.isBlank() ? null : reason.trim());
+        a.setCancelReason(reason == null || reason.isBlank() ? null : reason.trim());
         appts.save(a);
         tell(a, "Đã hủy lịch hẹn");
         return toDto(a);
@@ -168,7 +179,6 @@ public class AppointmentService {
     }
 
     // ---------- Xử lý chi tiết ----------
-
     private ApptDto doCreate(Long userId, CreateReq r) {
         Combo c = combo(r.svc());
         LocalDate date = parseDate(r.date());
@@ -182,7 +192,7 @@ public class AppointmentService {
         String code = null;
         if (r.code() != null && !r.code().isBlank()) {
             Voucher v = voucherFor(c, r.code());
-                        requireFirstUse(userId, v);
+            requireFirstUse(userId, v);
             d = discount(c, v);
             code = v.getCode();
         }
@@ -198,7 +208,7 @@ public class AppointmentService {
         a.setDiscount(d);
         a.setCode(code);
         a.setTotal(c.price() - d);
-                a.setNote(r.note() == null || r.note().isBlank() ? null : r.note().trim());
+        a.setNote(r.note() == null || r.note().isBlank() ? null : r.note().trim());
         appts.save(a);
         tell(a, "Đặt lịch thành công");
         return toDto(a);
@@ -217,14 +227,17 @@ public class AppointmentService {
             throw ApiException.conflict("Bạn đã có lịch khác trùng giờ này.");
         }
         a.setStaffId(chooseStaff(pool(c, r.staff()), r.staff(), date, m, c.dur(), a.getId()));
-                a.setDate(date);
+        a.setDate(date);
         a.setStartMin(m);
         appts.save(a);
         tell(a, "Đã đổi lịch hẹn");
         return toDto(a);
     }
 
-    /** Ghép các mã dịch vụ (s1+s12) thành một lần khám: cộng giá, cộng thời lượng, gộp chuyên khoa. */
+    /**
+     * Ghép các mã dịch vụ (s1+s12) thành một lần khám: cộng giá, cộng thời
+     * lượng, gộp chuyên khoa.
+     */
     private Combo combo(String key) {
         List<String> ids = Arrays.stream(key == null ? new String[0] : key.split("\\+"))
                 .map(String::trim).filter(s -> !s.isEmpty()).distinct().toList();
@@ -249,7 +262,10 @@ public class AppointmentService {
         return new Combo(String.join("+", ids), String.join(" + ", names), List.copyOf(cats), dur, price);
     }
 
-    /** Danh sách bác sĩ có thể nhận lượt khám: bác sĩ phụ trách đủ các chuyên khoa, nếu không có thì phụ trách ít nhất một. */
+    /**
+     * Danh sách bác sĩ có thể nhận lượt khám: bác sĩ phụ trách đủ các chuyên
+     * khoa, nếu không có thì phụ trách ít nhất một.
+     */
     private List<String> pool(Combo c, String sel) {
         List<Staff> active = staff.findByActiveTrueOrderById();
         List<Staff> all = active.stream().filter(s -> staffCats(s).containsAll(c.cats())).toList();
@@ -299,7 +315,10 @@ public class AppointmentService {
         return s1 < s2 + d2 && s2 < s1 + d1;
     }
 
-    /** Giờ bắt đầu hợp lệ: nằm trong giờ làm việc, kết thúc trước 18:00, không vướng nghỉ trưa 12:00-13:30. */
+    /**
+     * Giờ bắt đầu hợp lệ: nằm trong giờ làm việc, kết thúc trước 18:00, không
+     * vướng nghỉ trưa 12:00-13:30.
+     */
     private static boolean fitsHours(int m, int dur) {
         if (m < OPEN || m % STEP != 0 || m + dur > CLOSE) {
             return false;
@@ -326,14 +345,18 @@ public class AppointmentService {
             throw ApiException.bad("Khung giờ này nằm ngoài giờ làm việc hoặc trùng giờ nghỉ trưa (12:00 - 13:30).");
         }
         switch (baseState(date, m, LocalDateTime.now(ZONE))) {
-            case "closed" -> throw ApiException.bad("Phòng khám nghỉ Chủ nhật, và chỉ nhận đặt lịch trong " + MAX_DAYS_AHEAD + " ngày tới.");
-            case "past" -> throw ApiException.bad("Khung giờ này đã qua hoặc quá gần. Vui lòng đặt trước ít nhất " + (MIN_LEAD_MIN / 60) + " giờ.");
-            default -> { }
+            case "closed" ->
+                throw ApiException.bad("Phòng khám nghỉ Chủ nhật, và chỉ nhận đặt lịch trong " + MAX_DAYS_AHEAD + " ngày tới.");
+            case "past" ->
+                throw ApiException.bad("Khung giờ này đã qua hoặc quá gần. Vui lòng đặt trước ít nhất " + (MIN_LEAD_MIN / 60) + " giờ.");
+            default -> {
+            }
         }
     }
-        private void requireFirstUse(Long userId, Voucher v) {
+
+    private void requireFirstUse(Long userId, Voucher v) {
         if (WELCOME_CODE.equals(v.getCode()) && appts.existsByUserIdAndStatusNot(userId, ApptStatus.CANCELLED)) {
-            throw ApiException.bad("Mã chào mừng chỉ dùng cho lần đặt lịch đầu tiên.");
+            throw ApiException.bad("Khuyến mãi chào mừng chỉ dùng cho lần đặt lịch đầu tiên.");
         }
     }
 
@@ -379,7 +402,9 @@ public class AppointmentService {
         }
     }
 
-    /** Lịch sắp tới đã qua giờ kết thúc thì chuyển sang "đã khám". */
+    /**
+     * Lịch sắp tới đã qua giờ kết thúc thì chuyển sang "đã khám".
+     */
     private static void markDone(List<Appointment> list) {
         LocalDateTime now = LocalDateTime.now(ZONE);
         for (Appointment a : list) {
@@ -390,10 +415,30 @@ public class AppointmentService {
         }
     }
 
-       /** Gửi thông báo cho khách về lịch hẹn vừa thay đổi. */
+    /**
+     * Gửi thông báo cho khách về lịch hẹn vừa thay đổi.
+     */
+       /** Gửi thông báo trong app và email cho khách về lịch hẹn vừa thay đổi. */
     private void tell(Appointment a, String title) {
-        notifs.push(a.getUserId(), "booking", title, a.getServiceName() + ", mã " + a.getId() + ", lúc "
-                + fmtTime(a.getStartMin()) + " ngày " + a.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) + ".");
+        String when = fmtTime(a.getStartMin()) + " ngày " + a.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+        notifs.push(a.getUserId(), "booking", title, a.getServiceName() + ", mã " + a.getId() + ", lúc " + when + ".");
+        users.findById(a.getUserId()).ifPresent(u -> mailAfterCommit(u, a, title, when));
+    }
+
+    /** Chỉ gửi email sau khi lịch đã lưu xong; nếu giao dịch bị hủy thì không gửi. */
+    private void mailAfterCommit(UserAccount u, Appointment a, String title, String when) {
+        Runnable job = () -> mail.sendBooking(u.getEmail(), u.getName(), title, a.getId(),
+                a.getServiceName(), when, a.getTotal(), a.getCode());
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    job.run();
+                }
+            });
+        } else {
+            job.run();
+        }
     }
 
     private String newId() {

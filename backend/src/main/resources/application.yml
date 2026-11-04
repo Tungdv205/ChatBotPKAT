@@ -33,3 +33,6 @@ app:
   admin-name: ${ADMIN_NAME:Quản trị viên}
   seed-demo: ${SEED_DEMO:false}
   demo-password: ${DEMO_PASSWORD:demo1234}
+  mail-script-url: ${MAIL_SCRIPT_URL:}
+  mail-script-token: ${MAIL_SCRIPT_TOKEN:}
+  mail-from-name: ${MAIL_FROM_NAME:Phòng khám Anh Thu}

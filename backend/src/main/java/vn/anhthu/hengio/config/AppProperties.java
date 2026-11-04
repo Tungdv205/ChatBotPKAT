@@ -1,4 +1,5 @@
 package vn.anhthu.hengio.config;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
@@ -13,5 +14,8 @@ public record AppProperties(
         String adminPassword,
         @DefaultValue("Quản trị viên") String adminName,
         boolean seedDemo,
-        @DefaultValue("demo1234") String demoPassword) {
+        @DefaultValue("demo1234") String demoPassword,
+        @DefaultValue("") String mailScriptUrl,
+        @DefaultValue("") String mailScriptToken,
+        @DefaultValue("Phòng khám Anh Thu") String mailFromName) {
 }
