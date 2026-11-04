@@ -13,8 +13,9 @@ import Profile from './pages/Profile.jsx'
 import Support from './pages/Support.jsx'
 import Booking from './pages/Booking.jsx'
 import BookingSuccess from './pages/BookingSuccess.jsx'
+ import WelcomePopup from './components/WelcomePopup.jsx'
 import Placeholder from './pages/Placeholder.jsx'
-  import { canChange, svcById } from './utils/appointments.js'
+import { canChange, svcById } from './utils/appointments.js'
 import { copyText } from './utils/clipboard.js'
 import { api } from './api/client.js'
 import { applyCatalog } from './data/catalog.js'
@@ -136,6 +137,7 @@ export default function App() {
       ) : (
         <Login />
       )}
+            {user && <WelcomePopup app={app} />}
       <ChatWidget
         loggedIn={!!user}
         onGo={go}

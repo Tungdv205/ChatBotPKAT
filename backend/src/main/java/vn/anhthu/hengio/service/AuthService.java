@@ -30,9 +30,12 @@ import vn.anhthu.hengio.web.dto.AuthDtos.RegisterReq;
 import vn.anhthu.hengio.web.dto.AuthDtos.Settings;
 import vn.anhthu.hengio.web.dto.AuthDtos.UserDto;
 
-/** Đăng ký, đăng nhập, quên mật khẩu, hồ sơ cá nhân. */
+/**
+ * Đăng ký, đăng nhập, quên mật khẩu, hồ sơ cá nhân.
+ */
 @Service
 public class AuthService {
+
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
     private static final int MAX_FAILED = 5;
     private static final Duration LOCK_TIME = Duration.ofMinutes(15);
@@ -44,17 +47,19 @@ public class AuthService {
     private final PasswordEncoder encoder;
     private final JwtService jwt;
     private final AppProperties props;
+    private final NotificationService notifs;
     private final SecureRandom random = new SecureRandom();
     private final String dummyHash; // so khớp giả khi email không tồn tại, để thời gian phản hồi không lộ email nào có tài khoản
 
     public AuthService(UserRepository users, ResetTokenRepository tokens, UserDataCleaner cleaner,
-                       PasswordEncoder encoder, JwtService jwt, AppProperties props) {
+            PasswordEncoder encoder, JwtService jwt, AppProperties props, NotificationService notifs) {
         this.users = users;
-        this.tokens = tokens;
         this.cleaner = cleaner;
+        this.tokens = tokens;
         this.encoder = encoder;
         this.jwt = jwt;
         this.props = props;
+        this.notifs = notifs;
         this.dummyHash = encoder.encode("mat-khau-gia-de-chong-do-email");
     }
 
@@ -83,11 +88,16 @@ public class AuthService {
         u.setPhone(r.phone().trim());
         u.setPasswordHash(encoder.encode(r.password()));
         u.setRole(Role.CUSTOMER);
-        users.save(u);
+        u = users.save(u);
+        notifs.push(u.getId(), "promo", "Chào mừng " + u.getName() + " đến Phòng khám Anh Thu",
+                "Tặng bạn mã " + AppointmentService.WELCOME_CODE
+                + ": giảm 20% (tối đa 100.000đ) cho lịch khám đầu tiên. Nhập mã khi đặt lịch.");
         return new AuthRes(jwt.issue(u), toDto(u));
     }
 
-    /** noRollbackFor: vẫn lưu số lần nhập sai dù hàm kết thúc bằng lỗi 401. */
+    /**
+     * noRollbackFor: vẫn lưu số lần nhập sai dù hàm kết thúc bằng lỗi 401.
+     */
     @Transactional(noRollbackFor = ApiException.class)
     public AuthRes login(LoginReq r) {
         UserAccount u = users.findByEmailIgnoreCase(normEmail(r.email())).orElse(null);
@@ -118,7 +128,9 @@ public class AuthService {
         return new AuthRes(jwt.issue(u), toDto(u));
     }
 
-    /** Luôn trả kết quả giống nhau dù email có tồn tại hay không. */
+    /**
+     * Luôn trả kết quả giống nhau dù email có tồn tại hay không.
+     */
     @Transactional
     public void forgot(String emailRaw) {
         users.findByEmailIgnoreCase(normEmail(emailRaw)).filter(UserAccount::isEnabled).ifPresent(u -> {
@@ -167,8 +179,12 @@ public class AuthService {
         u.setPhone(nz(r.phone()).trim());
         u.setDob(nz(r.dob()));
         u.setGender(nz(r.gender()));
-        if (r.remind() != null) u.setRemind(r.remind());
-        if (r.promo() != null) u.setPromo(r.promo());
+        if (r.remind() != null) {
+            u.setRemind(r.remind());
+        }
+        if (r.promo() != null) {
+            u.setPromo(r.promo());
+        }
         users.save(u);
         return toDto(u);
     }
@@ -185,7 +201,10 @@ public class AuthService {
         return new AuthRes(jwt.issue(u), toDto(u)); // cấp token mới để người dùng không bị đăng xuất
     }
 
-    /** Khách tự xóa tài khoản. Dữ liệu liên quan (lịch hẹn, thông báo...) sẽ được xóa kèm ở các phần sau. */
+    /**
+     * Khách tự xóa tài khoản. Dữ liệu liên quan (lịch hẹn, thông báo...) sẽ
+     * được xóa kèm ở các phần sau.
+     */
     @Transactional
     public void deleteAccount(Long id, String password) {
         UserAccount u = load(id);
@@ -196,7 +215,7 @@ public class AuthService {
             throw ApiException.bad("Mật khẩu chưa đúng.");
         }
         tokens.deleteByUserId(id);
-               cleaner.deleteAll(id);
+        cleaner.deleteAll(id);
         users.delete(u);
     }
 

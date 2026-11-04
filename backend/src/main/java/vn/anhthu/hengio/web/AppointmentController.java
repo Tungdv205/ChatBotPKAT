@@ -48,9 +48,9 @@ public class AppointmentController {
         return this.svc.slots(me.getId(), svc, staff, date, exceptId);
     }
 
-    @PostMapping("/vouchers/check")
-    public VoucherRes check(@Valid @RequestBody VoucherReq r) {
-        return svc.checkVoucher(r.svc(), r.code());
+        @PostMapping("/vouchers/check")
+    public VoucherRes check(@AuthenticationPrincipal UserAccount me, @Valid @RequestBody VoucherReq r) {
+        return svc.checkVoucher(me.getId(), r.svc(), r.code());
     }
 
     @PostMapping("/appointments")

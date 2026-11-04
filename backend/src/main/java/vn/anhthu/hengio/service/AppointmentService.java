@@ -45,6 +45,7 @@ import vn.anhthu.hengio.web.dto.AppointmentDtos.VoucherRes;
  */
 @Service
 public class AppointmentService {
+        public static final String WELCOME_CODE = "CHAOMUNG";
     static final ZoneId ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
     static final int OPEN = 480;          // 08:00
     static final int CLOSE = 1080;        // 18:00
@@ -117,9 +118,10 @@ public class AppointmentService {
     }
 
     @Transactional(readOnly = true)
-    public VoucherRes checkVoucher(String svcKey, String code) {
+    public VoucherRes checkVoucher(Long userId, String svcKey, String code) {
         Combo c = combo(svcKey);
         Voucher v = voucherFor(c, code);
+        requireFirstUse(userId, v);
         long d = discount(c, v);
         return new VoucherRes(v.getCode(), v.getTitle(), d, c.price() - d);
     }
@@ -180,6 +182,7 @@ public class AppointmentService {
         String code = null;
         if (r.code() != null && !r.code().isBlank()) {
             Voucher v = voucherFor(c, r.code());
+                        requireFirstUse(userId, v);
             d = discount(c, v);
             code = v.getCode();
         }
@@ -326,6 +329,11 @@ public class AppointmentService {
             case "closed" -> throw ApiException.bad("Phòng khám nghỉ Chủ nhật, và chỉ nhận đặt lịch trong " + MAX_DAYS_AHEAD + " ngày tới.");
             case "past" -> throw ApiException.bad("Khung giờ này đã qua hoặc quá gần. Vui lòng đặt trước ít nhất " + (MIN_LEAD_MIN / 60) + " giờ.");
             default -> { }
+        }
+    }
+        private void requireFirstUse(Long userId, Voucher v) {
+        if (WELCOME_CODE.equals(v.getCode()) && appts.existsByUserIdAndStatusNot(userId, ApptStatus.CANCELLED)) {
+            throw ApiException.bad("Mã chào mừng chỉ dùng cho lần đặt lịch đầu tiên.");
         }
     }
 

@@ -23,6 +23,7 @@ public interface AppointmentRepository extends JpaRepository<Appointment, String
     List<Appointment> findTop500ByOrderByDateDescStartMinDesc();
 
     long countByUserId(Long userId);
+        boolean existsByUserIdAndStatusNot(Long userId, ApptStatus status);
 
     boolean existsByStaffIdAndStatusAndDateGreaterThanEqual(String staffId, ApptStatus status, LocalDate date);
 
