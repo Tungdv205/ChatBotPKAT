@@ -17,5 +17,7 @@ public record AppProperties(
         @DefaultValue("demo1234") String demoPassword,
         @DefaultValue("") String mailScriptUrl,
         @DefaultValue("") String mailScriptToken,
-        @DefaultValue("Phòng khám Anh Thu") String mailFromName) {
+        @DefaultValue("Phòng khám Anh Thu") String mailFromName,
+        @DefaultValue("") String aiApiKey,
+        @DefaultValue("gemini-3.8-flash,gemini-3.6-flash") String aiModels) {
 }

@@ -103,8 +103,6 @@ Mở `http://localhost:5173` (khách) và `http://localhost:5173/admin` (quản 
 - Khách hàng (cần token): `/api/me`, `/api/appointments`, `/api/slots`, `/api/vouchers/check`, `/api/notifications`, `/api/tickets`
 - Quản trị (token admin): `/api/admin/*`
 
-Chi tiết nghiệp vụ, bảo mật và triển khai backend xem [backend/README.md](backend/README.md).
-
 ## Quy tắc nghiệp vụ
 
 - Giờ làm việc 08:00–18:00, nghỉ trưa 12:00–13:30

@@ -1,5 +1,6 @@
 server:
   port: ${PORT:8080}
+  s  forward-headers-strategy: native
   error:
     include-message: never
     include-stacktrace: never
@@ -36,3 +37,5 @@ app:
   mail-script-url: ${MAIL_SCRIPT_URL:}
   mail-script-token: ${MAIL_SCRIPT_TOKEN:}
   mail-from-name: ${MAIL_FROM_NAME:Phòng khám Anh Thu}
+  ai-api-key: ${AI_API_KEY:}
+  ai-models: ${AI_MODELS:gemini-3.8-flash,gemini-3.6-flash}

@@ -13,7 +13,7 @@ import Profile from './pages/Profile.jsx'
 import Support from './pages/Support.jsx'
 import Booking from './pages/Booking.jsx'
 import BookingSuccess from './pages/BookingSuccess.jsx'
- import WelcomePopup from './components/WelcomePopup.jsx'
+import WelcomePopup from './components/WelcomePopup.jsx'
 import Placeholder from './pages/Placeholder.jsx'
 import { canChange, svcById } from './utils/appointments.js'
 import { copyText } from './utils/clipboard.js'
@@ -37,10 +37,10 @@ export default function App() {
   useEffect(() => {
     api('/api/catalog', { token: null })
       .then(applyCatalog)
-      .catch(() => {}) // lỗi thì dùng dữ liệu mẫu có sẵn
+      .catch(() => { }) // lỗi thì dùng dữ liệu mẫu có sẵn
       .finally(() => setCatReady(true))
   }, [])
-  
+
   // Đăng xuất thì lần đăng nhập sau quay về Trang chủ
   useEffect(() => {
     if (!user) {
@@ -82,7 +82,7 @@ export default function App() {
     },
     reschedule: (a) => {
       if (!canChange(a)) return toast('Còn dưới 2 giờ nên không thể đổi lịch trực tuyến. Hãy gọi hotline.')
-                if (!svcById(a.svc)) return toast('Dịch vụ này đã ngừng cung cấp. Hãy hủy lịch và đặt dịch vụ khác.')
+      if (!svcById(a.svc)) return toast('Dịch vụ này đã ngừng cung cấp. Hãy hủy lịch và đặt dịch vụ khác.')
       app.startBooking({ svc: a.svc, editId: a.id, note: a.note, step: 2 })
     },
     clearSvcPreset: () => setSvcPreset({ cat: 'all', detail: null }),
@@ -106,7 +106,7 @@ export default function App() {
   const item = NAV.find((n) => n[0] === view) || NAV[0]
 
   // Đang kiểm tra phiên đăng nhập đã lưu: chưa hiện gì để khỏi nháy sang màn đăng nhập
-   if (booting || !catReady) return <div style={{ padding: 40, textAlign: 'center', color: '#667' }}>Đang tải...</div>
+  if (booting || !catReady) return <div style={{ padding: 40, textAlign: 'center', color: '#667' }}>Đang tải...</div>
   return (
     <>
       {user ? (
@@ -137,7 +137,7 @@ export default function App() {
       ) : (
         <Login />
       )}
-            {user && <WelcomePopup app={app} />}
+      {user && <WelcomePopup app={app} />}
       <ChatWidget
         loggedIn={!!user}
         onGo={go}

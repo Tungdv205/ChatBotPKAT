@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { api } from '../api/client.js'
 import Icon from './Icon.jsx'
 import { SERVICES, VOUCHERS } from '../data/catalog.js'
 import { norm, vnd } from '../utils/helpers.js'
@@ -33,6 +34,27 @@ function botReply(raw) {
   if (has(/^(xin chao|chao|hello|hi|alo)( |$)/))
     return { text: 'Xin chào, mình có thể giúp gì cho bạn?' }
   return { text: 'Mình chưa có câu trả lời cho nội dung này. Bạn có thể xem câu hỏi thường gặp hoặc chuyển cho nhân viên.', actions: [{ l: 'Câu hỏi thường gặp', a: 'support', v: 'faq' }, { l: 'Gặp nhân viên', a: 'support', v: 'staff' }] }
+}
+// Câu hỏi có sẵn trong bộ quy tắc thì trả lời ngay; không có thì hỏi AI (backend), lỗi thì dùng câu mặc định
+const NO_ANSWER = 'Mình chưa có câu trả lời cho nội dung này.'
+async function smartReply(raw) {
+  const r = botReply(raw)
+  if (!r.text.startsWith(NO_ANSWER)) return r
+  try {
+    const res = await api('/api/chat', { method: 'POST', body: { message: raw }, token: null })
+    if (res && res.text) {
+      return {
+        text: res.text,
+        actions: [
+          { l: 'Đặt lịch ngay', a: 'go', v: 'book' },
+          { l: 'Gặp nhân viên', a: 'support', v: 'staff' },
+        ],
+      }
+    }
+  } catch (e) {
+    /* AI lỗi hoặc hết lượt: dùng câu trả lời mặc định */
+  }
+  return r
 }
 
 const GREETING = {
@@ -183,7 +205,7 @@ export default function ChatWidget({ loggedIn, onGo, onSupport, onNeedLogin }) {
     setMsgs((m) => [...m, { from: 'me', text }])
     setTyping(true)
     setTimeout(() => {
-      Promise.resolve(botReply(text))
+          Promise.resolve(smartReply(text))
         .then((r) => setMsgs((m) => [...m, { from: 'bot', text: r.text, actions: r.actions }]))
         .catch(() =>
           setMsgs((m) => [
