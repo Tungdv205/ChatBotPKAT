@@ -1,16 +1,19 @@
 package vn.anhthu.hengio.security;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
+import java.util.Optional;
+
+import javax.crypto.SecretKey;
+
+import org.springframework.stereotype.Service;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.Optional;
-import javax.crypto.SecretKey;
-import org.springframework.stereotype.Service;
 import vn.anhthu.hengio.config.AppProperties;
 import vn.anhthu.hengio.model.UserAccount;
 
@@ -34,14 +37,20 @@ public class JwtService {
         this.ttlMinutes = props.jwtExpireMinutes();
     }
 
-    public String issue(UserAccount u) {
+       public String issue(UserAccount u) {
+        return issue(u, false);
+    }
+
+    /** remember = true: token sống 30 ngày (khách chọn "Ghi nhớ đăng nhập"). */
+    public String issue(UserAccount u, boolean remember) {
         Instant now = Instant.now();
+        long minutes = remember ? 30L * 24 * 60 : ttlMinutes;
         return Jwts.builder()
                 .subject(String.valueOf(u.getId()))
                 .claim("role", u.getRole().name())
                 .claim("v", u.getTokenVersion())
                 .issuedAt(Date.from(now))
-                .expiration(Date.from(now.plus(ttlMinutes, ChronoUnit.MINUTES)))
+                .expiration(Date.from(now.plus(minutes, ChronoUnit.MINUTES)))
                 .signWith(key)
                 .compact();
     }

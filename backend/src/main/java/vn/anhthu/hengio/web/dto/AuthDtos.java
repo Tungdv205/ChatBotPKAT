@@ -21,9 +21,10 @@ public final class AuthDtos {
                     @Pattern(regexp = PHONE_RULE, message = "Số điện thoại chưa đúng.") String phone,
             @NotBlank(message = "Hãy nhập mật khẩu.") @Pattern(regexp = PASSWORD_RULE, message = PASSWORD_MSG) String password) {}
 
-    public record LoginReq(
+        public record LoginReq(
             @NotBlank(message = "Hãy nhập email.") String email,
-            @NotBlank(message = "Hãy nhập mật khẩu.") String password) {}
+            @NotBlank(message = "Hãy nhập mật khẩu.") String password,
+            Boolean remember) {}
 
     public record ForgotReq(@NotBlank(message = "Hãy nhập email.") String email) {}
 

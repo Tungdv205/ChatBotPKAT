@@ -14,7 +14,6 @@ import Support from './pages/Support.jsx'
 import Booking from './pages/Booking.jsx'
 import BookingSuccess from './pages/BookingSuccess.jsx'
 import WelcomePopup from './components/WelcomePopup.jsx'
-import Placeholder from './pages/Placeholder.jsx'
 import { canChange, svcById } from './utils/appointments.js'
 import { copyText } from './utils/clipboard.js'
 import { api } from './api/client.js'
@@ -129,10 +128,7 @@ export default function App() {
             <Support tab={supTab} onTab={setSupTab} />
           ) : view === 'success' ? (
             <BookingSuccess app={app} apptId={lastApptId} />
-          ) : (
-            // Mỗi màn thật sẽ thay Placeholder ở các bước sau
-            <Placeholder title={item[1]} icon={item[2]} />
-          )}
+                   ) : null}
         </AppShell>
       ) : (
         <Login />

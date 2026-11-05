@@ -95,9 +95,9 @@ export function AuthProvider({ children }) {
   }
 
   // Mỗi hàm trả về Promise { ok: true } hoặc { ok: false, error: '...' }
-  const login = useCallback(async (email, pass) => {
+  const login = useCallback(async (email, pass, remember) => {
     try {
-      const res = await api('/api/auth/login', { method: 'POST', body: { email, password: pass }, token: null })
+      const res = await api('/api/auth/login', { method: 'POST', body: { email, password: pass, remember: !!remember }, token: null })
       if (res.user.role === 'ADMIN') return { ok: false, error: 'Tài khoản quản trị vui lòng đăng nhập ở trang /admin.' }
       start(res)
       return { ok: true }
@@ -105,7 +105,6 @@ export function AuthProvider({ children }) {
       return fail(e)
     }
   }, [])
-
   const register = useCallback(async ({ name, email, phone, pass }) => {
     try {
       const res = await api('/api/auth/register', { method: 'POST', body: { name, email, phone, password: pass }, token: null })

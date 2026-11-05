@@ -125,7 +125,7 @@ public class AuthService {
         u.setFailedLogins(0);
         u.setLockedUntil(null);
         users.save(u);
-        return new AuthRes(jwt.issue(u), toDto(u));
+               return new AuthRes(jwt.issue(u, Boolean.TRUE.equals(r.remember())), toDto(u));
     }
 
     /**

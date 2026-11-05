@@ -31,10 +31,18 @@ function PasswordField({ id, label, name, value, onChange, autoComplete, placeho
     </div>
   )
 }
+const REMEMBER_KEY = 'hengio.remember.email'
 
 function LoginForm({ go }) {
   const { login } = useAuth()
-  const [f, setF] = useState({ email: '', pass: '' })
+  const saved = (() => {
+    try {
+      return localStorage.getItem(REMEMBER_KEY) || ''
+    } catch (e) {
+      return ''
+    }
+  })()
+  const [f, setF] = useState({ email: saved, pass: '', remember: !!saved })
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
   const set = (k) => (e) => setF({ ...f, [k]: e.target.value })
@@ -45,9 +53,16 @@ function LoginForm({ go }) {
     if (!emailRe.test(email)) return setErr('Nhập email hợp lệ, ví dụ ten@email.com.')
     if (!f.pass) return setErr('Nhập mật khẩu.')
     setBusy(true)
-    const r = await login(email, f.pass)
+    const r = await login(email, f.pass, f.remember)
     setBusy(false)
-    if (!r.ok) setErr(r.error)
+    if (!r.ok) return setErr(r.error)
+    // Nhớ email (không bao giờ lưu mật khẩu)
+    try {
+      if (f.remember) localStorage.setItem(REMEMBER_KEY, email)
+      else localStorage.removeItem(REMEMBER_KEY)
+    } catch (e2) {
+      /* bỏ qua */
+    }
   }
 
   return (
@@ -59,6 +74,7 @@ function LoginForm({ go }) {
           <label htmlFor="l-email">Email</label>
           <input
             id="l-email"
+            name="email"
             type="email"
             autoComplete="username"
             inputMode="email"
@@ -69,12 +85,17 @@ function LoginForm({ go }) {
         </div>
         <PasswordField
           id="l-pass"
+          name="password"
           label="Mật khẩu"
           autoComplete="current-password"
           placeholder="Nhập mật khẩu"
           value={f.pass}
           onChange={set('pass')}
         />
+        <label className="check">
+          <input type="checkbox" id="l-remember" checked={f.remember} onChange={(e) => setF({ ...f, remember: e.target.checked })} />
+          <span>Ghi nhớ đăng nhập </span>
+        </label>
         <p className="err" role="alert">{err}</p>
         <button className="btn btn-primary btn-block" type="submit" disabled={busy}>
           {busy ? 'Đang đăng nhập...' : 'Đăng nhập'}
