@@ -128,7 +128,7 @@ export default function App() {
             <Support tab={supTab} onTab={setSupTab} />
           ) : view === 'success' ? (
             <BookingSuccess app={app} apptId={lastApptId} />
-                   ) : null}
+          ) : null}
         </AppShell>
       ) : (
         <Login />
@@ -138,6 +138,7 @@ export default function App() {
         loggedIn={!!user}
         onGo={go}
         onSupport={goSupport}
+        onConsult={() => (svcById('tuvan') ? app.startBooking({ svc: 'tuvan', step: 2 }) : go('book'))}
         onNeedLogin={() => toast('Hãy đăng nhập để tiếp tục.')}
       />
     </>

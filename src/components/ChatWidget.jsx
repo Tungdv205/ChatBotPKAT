@@ -33,30 +33,39 @@ function botReply(raw) {
     return { text: 'Xét nghiệm máu tổng quát và siêu âm bụng thường cần nhịn ăn 6 đến 10 giờ. Phòng khám sẽ dặn kỹ khi xác nhận lịch.' }
   if (has(/^(xin chao|chao|hello|hi|alo)( |$)/))
     return { text: 'Xin chào, mình có thể giúp gì cho bạn?' }
-  return { text: 'Mình chưa có câu trả lời cho nội dung này. Bạn có thể xem câu hỏi thường gặp hoặc chuyển cho nhân viên.', actions: [{ l: 'Câu hỏi thường gặp', a: 'support', v: 'faq' }, { l: 'Gặp nhân viên', a: 'support', v: 'staff' }] }
+  return { text: 'Mình chưa có câu trả lời cho nội dung này. Bạn có thể đặt lịch tư vấn miễn phí với nhân viên, hoặc xem câu hỏi thường gặp.', actions: [{ l: 'Đặt lịch tư vấn', a: 'consult' }, { l: 'Câu hỏi thường gặp', a: 'support', v: 'faq' }, { l: 'Gặp nhân viên', a: 'support', v: 'staff' }] }
 }
-// Câu hỏi có sẵn trong bộ quy tắc thì trả lời ngay; không có thì hỏi AI (backend), lỗi thì dùng câu mặc định
-const NO_ANSWER = 'Mình chưa có câu trả lời cho nội dung này.'
+// Cấp cứu trả lời cố định ngay. Câu khác hỏi AI (backend) trước; AI lỗi thì dùng quy tắc có sẵn.
+const EMERGENCY = /cap cuu|kho tho|dau nguc|ngat|co giat|chay mau|tai bien|dot quy/
+const POOL = [
+  'Giờ làm việc của phòng khám?',
+  'Cách đặt lịch khám?',
+  'Có ưu đãi nào không?',
+  'Cần mang giấy tờ gì?',
+  'Đổi hoặc hủy lịch thế nào?',
+  'Giá khám nội tổng quát?',
+]
+const localSuggest = (raw) => POOL.filter((s) => norm(s) !== norm(raw)).slice(0, 3)
+
 async function smartReply(raw) {
-  const r = botReply(raw)
-  if (!r.text.startsWith(NO_ANSWER)) return r
+  if (EMERGENCY.test(norm(raw))) return { ...botReply(raw), suggestions: [] }
   try {
     const res = await api('/api/chat', { method: 'POST', body: { message: raw }, token: null })
     if (res && res.text) {
-      return {
-        text: res.text,
-        actions: [
-          { l: 'Đặt lịch ngay', a: 'go', v: 'book' },
+      const sug = Array.isArray(res.suggestions) && res.suggestions.length ? res.suggestions.slice(0, 3) : localSuggest(raw)
+      const actions = res.needStaff
+        ? [
+          { l: 'Đặt lịch tư vấn', a: 'consult' },
           { l: 'Gặp nhân viên', a: 'support', v: 'staff' },
-        ],
-      }
+        ]
+        : [{ l: 'Đặt lịch ngay', a: 'go', v: 'book' }]
+      return { text: res.text, actions, suggestions: sug }
     }
   } catch (e) {
-    /* AI lỗi hoặc hết lượt: dùng câu trả lời mặc định */
+    /* AI lỗi hoặc hết lượt: dùng quy tắc có sẵn */
   }
-  return r
+  return { ...botReply(raw), suggestions: localSuggest(raw) }
 }
-
 const GREETING = {
   from: 'bot',
   text: 'Xin chào, mình là trợ lý của Phòng khám đa khoa Anh Thu. Mình hỗ trợ đặt lịch, giờ làm việc, ưu đãi và giấy tờ cần mang. Mình không chẩn đoán bệnh.',
@@ -91,8 +100,7 @@ function place(saved) {
   if (saved) return clamp(saved.side === 'l' ? FM : W - FS - FM, saved.yr * (H - FS - 2 * FM) + FM)
   return clamp(W - FS - FM, H - FS - (W < 900 ? 96 : 32))
 }
-
-export default function ChatWidget({ loggedIn, onGo, onSupport, onNeedLogin }) {
+export default function ChatWidget({ loggedIn, onGo, onSupport, onConsult, onNeedLogin }) {
   const [open, setOpen] = useState(false)
   const [msgs, setMsgs] = useState([GREETING])
   const [typing, setTyping] = useState(false)
@@ -205,8 +213,8 @@ export default function ChatWidget({ loggedIn, onGo, onSupport, onNeedLogin }) {
     setMsgs((m) => [...m, { from: 'me', text }])
     setTyping(true)
     setTimeout(() => {
-          Promise.resolve(smartReply(text))
-        .then((r) => setMsgs((m) => [...m, { from: 'bot', text: r.text, actions: r.actions }]))
+      Promise.resolve(smartReply(text))
+        .then((r) => setMsgs((m) => [...m, { from: 'bot', text: r.text, actions: r.actions, suggestions: r.suggestions }]))
         .catch(() =>
           setMsgs((m) => [
             ...m,
@@ -233,6 +241,7 @@ export default function ChatWidget({ loggedIn, onGo, onSupport, onNeedLogin }) {
     if (!loggedIn) return onNeedLogin()
     closePanel()
     if (a.a === 'support') onSupport(a.v)
+    else if (a.a === 'consult') onConsult()
     else onGo(a.v)
   }
 
@@ -281,6 +290,15 @@ export default function ChatWidget({ loggedIn, onGo, onSupport, onNeedLogin }) {
                         {m.actions.map((a) => (
                           <button key={a.l} type="button" className="chip" onClick={() => runAction(a)}>
                             {a.l}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {!typing && i === msgs.length - 1 && m.suggestions && m.suggestions.length > 0 && (
+                      <div className="macts">
+                        {m.suggestions.map((s) => (
+                          <button key={s} type="button" className="chip" onClick={() => send(s)}>
+                            {s}
                           </button>
                         ))}
                       </div>
