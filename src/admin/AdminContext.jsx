@@ -182,6 +182,18 @@ export function AdminProvider({ children }) {
     },
     [adm, refreshAppts, refreshStats]
   )
+    const deleteAppt = useCallback(
+    async (id) => {
+      try {
+        await adm('/api/admin/appointments/' + id, { method: 'DELETE' })
+        await Promise.all([refreshAppts(), refreshStats()])
+        return { ok: true }
+      } catch (e) {
+        return fail(e)
+      }
+    },
+    [adm, refreshAppts, refreshStats]
+  )
 
   // ----- Yêu cầu hỗ trợ -----
   const replyTicket = useCallback(
@@ -276,6 +288,7 @@ export function AdminProvider({ children }) {
       catOf: (id) => CATS.find((c) => c.id === id),
       cancelAppt,
       doneAppt,
+      deleteAppt,
       replyTicket,
       saveService,
       saveVoucher,
@@ -297,6 +310,7 @@ export function AdminProvider({ children }) {
       staff,
       cancelAppt,
       doneAppt,
+       deleteAppt,
       replyTicket,
       saveService,
       saveVoucher,

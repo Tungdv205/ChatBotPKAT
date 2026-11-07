@@ -95,7 +95,11 @@ public class AdminController {
         admin.completeAppointment(me, id);
         return OK;
     }
-
+    @DeleteMapping("/appointments/{id}")
+    public Map<String, String> deleteAppointment(@AuthenticationPrincipal UserAccount me, @PathVariable String id) {
+        admin.deleteAppointment(me, id);
+        return OK;
+    }
     @GetMapping("/stats")
     public StatsRes stats() {
         return admin.stats();

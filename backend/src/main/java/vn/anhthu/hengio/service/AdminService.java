@@ -212,8 +212,18 @@ public class AdminService {
                 a.getServiceName() + ", mã " + a.getId() + ", ngày " + a.getDate().format(DATE_VN)
                 + ". Cảm ơn bạn đã đến khám. Vào Lịch hẹn, mục Đã khám để đánh giá dịch vụ.");
         audit.log(admin.getEmail(), "HOAN_THANH_LICH", a.getId(), null);
+        
     }
-
+    /** Xóa lịch đã xử lý (đã khám hoặc đã hủy). Lịch sắp tới phải hủy trước, không xóa trực tiếp. */
+    @Transactional
+    public void deleteAppointment(UserAccount admin, String id) {
+        Appointment a = appts.findById(id).orElseThrow(() -> ApiException.notFound("Không tìm thấy lịch hẹn."));
+        if (effStatus(a, LocalDateTime.now(AppointmentService.ZONE)).equals("upcoming")) {
+            throw ApiException.bad("Lịch sắp tới không xóa trực tiếp. Hãy hủy lịch trước.");
+        }
+        appts.delete(a);
+        audit.log(admin.getEmail(), "XOA_LICH", id, "Xóa lịch đã xử lý");
+    }
     // ---------- Thống kê ----------
     @Transactional(readOnly = true)
     public StatsRes stats() {

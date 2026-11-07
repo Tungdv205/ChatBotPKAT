@@ -18,10 +18,11 @@ const PILL = {
 }
 
 // Hộp thoại chi tiết một lịch hẹn
-function Detail({ id, startCancel, onClose }) {
-  const { appts, staffOf, cancelAppt, doneAppt } = useAdmin()
+function Detail({ id, startCancel, startDelete, onClose }) {
+  const { appts, staffOf, cancelAppt, doneAppt, deleteAppt } = useAdmin()
   const toast = useToast()
   const [confirmCancel, setConfirmCancel] = useState(!!startCancel)
+  const [confirmDelete, setConfirmDelete] = useState(!!startDelete)
   const [reason, setReason] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
@@ -47,6 +48,15 @@ function Detail({ id, startCancel, onClose }) {
     setBusy(false)
     if (!r.ok) return setErr(r.error)
     toast('Đã hủy lịch, khách đã nhận thông báo')
+    onClose()
+  }
+
+  const remove = async () => {
+    setBusy(true)
+    const r = await deleteAppt(a.id)
+    setBusy(false)
+    if (!r.ok) return setErr(r.error)
+    toast('Đã xóa lịch hẹn')
     onClose()
   }
 
@@ -136,17 +146,38 @@ function Detail({ id, startCancel, onClose }) {
             </button>
           </div>
         ))}
+
+      {st !== 'upcoming' &&
+        (confirmDelete ? (
+          <div className="confirm-row">
+            <span>Xóa hẳn lịch này khỏi danh sách? Không thể khôi phục.</span>
+            <span style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button className="btn btn-sm btn-line" disabled={busy} onClick={() => setConfirmDelete(false)}>
+                Không xóa
+              </button>
+              <button className="btn btn-sm btn-danger" disabled={busy} onClick={remove}>
+                {busy ? 'Đang xóa...' : 'Xác nhận xóa'}
+              </button>
+            </span>
+          </div>
+        ) : (
+          <div>
+            <button className="btn btn-danger btn-sm" onClick={() => setConfirmDelete(true)}>
+              Xóa lịch
+            </button>
+          </div>
+        ))}
     </Modal>
   )
 }
 
-// Màn Lịch hẹn: tìm, lọc theo trạng thái và ngày, xem chi tiết, xử lý
+// Màn Lịch hẹn: tìm, lọc theo trạng thái và ngày, xem chi tiết, xử lý, xóa lịch đã xử lý
 export default function AdminAppointments() {
   const { appts, staffOf } = useAdmin()
   const [q, setQ] = useState('')
   const [f, setF] = useState('all')
   const [date, setDate] = useState('')
-  const [open, setOpen] = useState(null) // { id, cancel }
+  const [open, setOpen] = useState(null) // { id, cancel, del }
 
   const key = norm(q.trim())
   const match = (a) =>
@@ -238,9 +269,13 @@ export default function AdminAppointments() {
                         <button className="btn btn-line btn-sm" onClick={() => setOpen({ id: a.id })}>
                           Chi tiết
                         </button>{' '}
-                        {eff(a) === 'upcoming' && (
+                        {eff(a) === 'upcoming' ? (
                           <button className="btn btn-danger btn-sm" onClick={() => setOpen({ id: a.id, cancel: true })}>
                             Hủy lịch
+                          </button>
+                        ) : (
+                          <button className="btn btn-danger btn-sm" onClick={() => setOpen({ id: a.id, del: true })}>
+                            Xóa
                           </button>
                         )}
                       </td>
@@ -255,7 +290,15 @@ export default function AdminAppointments() {
         )}
       </div>
 
-      {open && <Detail key={open.id + (open.cancel ? 'c' : '')} id={open.id} startCancel={open.cancel} onClose={() => setOpen(null)} />}
+      {open && (
+        <Detail
+          key={open.id + (open.cancel ? 'c' : '') + (open.del ? 'd' : '')}
+          id={open.id}
+          startCancel={open.cancel}
+          startDelete={open.del}
+          onClose={() => setOpen(null)}
+        />
+      )}
     </>
   )
 }
