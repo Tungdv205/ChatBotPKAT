@@ -2,3 +2,13 @@
 node_modules/
 dist/
 .env
+
+.vscode/
+*.log
+target/
+.env.*
+!.env.example
+*.log
+target/
+.env.*
+!.env.example
