@@ -34,12 +34,14 @@ import vn.anhthu.hengio.web.dto.AdminDtos.PageRes;
 import vn.anhthu.hengio.web.dto.AdminDtos.StatsRes;
 
 /**
- * Nghiệp vụ quản trị: khách hàng, lịch hẹn, thống kê. Mọi thao tác thay đổi dữ liệu đều ghi nhật ký.
- * Quy tắc bảo mật: số điện thoại bị che trong danh sách; xem đủ thông tin một khách cũng được ghi nhật ký;
- * nhật ký không chứa dữ liệu cá nhân.
+ * Nghiệp vụ quản trị: khách hàng, lịch hẹn, thống kê. Mọi thao tác thay đổi dữ
+ * liệu đều ghi nhật ký. Quy tắc bảo mật: số điện thoại bị che trong danh sách;
+ * xem đủ thông tin một khách cũng được ghi nhật ký; nhật ký không chứa dữ liệu
+ * cá nhân.
  */
 @Service
 public class AdminService {
+
     private static final DateTimeFormatter DATE_VN = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final UserRepository users;
@@ -51,8 +53,8 @@ public class AdminService {
     private final PasswordEncoder encoder;
 
     public AdminService(UserRepository users, AppointmentRepository appts, TicketRepository tickets,
-                        NotificationService notifs, AuditService audit, UserDataCleaner cleaner,
-                        PasswordEncoder encoder) {
+            NotificationService notifs, AuditService audit, UserDataCleaner cleaner,
+            PasswordEncoder encoder) {
         this.users = users;
         this.appts = appts;
         this.tickets = tickets;
@@ -63,7 +65,6 @@ public class AdminService {
     }
 
     // ---------- Khách hàng ----------
-
     @Transactional(readOnly = true)
     public PageRes<CustomerRow> customers(String q, int page, int size) {
         String key = norm(q);
@@ -82,7 +83,9 @@ public class AdminService {
         return new PageRes<>(rows, all.size(), pg, sz);
     }
 
-    /** Xem đủ thông tin một khách (có số điện thoại đầy đủ): được ghi nhật ký. */
+    /**
+     * Xem đủ thông tin một khách (có số điện thoại đầy đủ): được ghi nhật ký.
+     */
     @Transactional
     public CustomerDetail customer(UserAccount admin, Long id) {
         UserAccount u = customerOf(id);
@@ -118,7 +121,10 @@ public class AdminService {
                 changed.isEmpty() ? "Không thay đổi" : "Đã sửa: " + String.join(", ", changed));
     }
 
-    /** Khóa tài khoản: khách không đăng nhập được nữa và token đang dùng bị vô hiệu ngay. */
+    /**
+     * Khóa tài khoản: khách không đăng nhập được nữa và token đang dùng bị vô
+     * hiệu ngay.
+     */
     @Transactional
     public void lock(UserAccount admin, Long id, boolean locked) {
         UserAccount u = customerOf(id);
@@ -130,7 +136,10 @@ public class AdminService {
         audit.log(admin.getEmail(), locked ? "KHOA_KHACH" : "MO_KHOA_KHACH", "KH#" + id, null);
     }
 
-    /** Xóa khách và toàn bộ dữ liệu của khách. Phải nhập lại mật khẩu quản trị. Nhật ký chỉ ghi mã khách, không ghi tên hay email. */
+    /**
+     * Xóa khách và toàn bộ dữ liệu của khách. Phải nhập lại mật khẩu quản trị.
+     * Nhật ký chỉ ghi mã khách, không ghi tên hay email.
+     */
     @Transactional
     public void deleteCustomer(UserAccount admin, Long id, String adminPassword) {
         if (!encoder.matches(adminPassword, admin.getPasswordHash())) {
@@ -143,7 +152,6 @@ public class AdminService {
     }
 
     // ---------- Lịch hẹn ----------
-
     @Transactional(readOnly = true)
     public List<AdminApptDto> appointments(String status, String date, String q) {
         List<Appointment> list = appts.findTop500ByOrderByDateDescStartMinDesc();
@@ -162,18 +170,21 @@ public class AdminService {
                 continue;
             }
             UserAccount u = byId.get(a.getUserId());
-            String name = u == null ? "(đã xóa)" : u.getName();
+            String name = blank(a.getContactName()).isEmpty() ? (u == null ? "(đã xóa)" : u.getName()) : a.getContactName();
+            String phone = blank(a.getContactPhone()).isEmpty() ? (u == null ? "" : mask(u.getPhone())) : mask(a.getContactPhone());
             if (!key.isEmpty() && !norm(a.getId() + " " + name + " " + a.getServiceName()).contains(key)) {
                 continue;
             }
             out.add(new AdminApptDto(a.getId(), a.getServiceKey(), a.getServiceName(), a.getStaffId(),
                     a.getDate().toString(), time(a.getStartMin()), a.getDurationMin(), st, a.getTotal(), a.getCode(),
-                    a.getNote(), a.getCancelReason(), a.getUserId(), name, u == null ? "" : mask(u.getPhone())));
+                    a.getNote(), a.getCancelReason(), a.getUserId(), name,phone));
         }
         return out;
     }
 
-    /** Phòng khám hủy lịch: bắt buộc có lý do, khách nhận thông báo kèm lý do. */
+    /**
+     * Phòng khám hủy lịch: bắt buộc có lý do, khách nhận thông báo kèm lý do.
+     */
     @Transactional
     public void cancelAppointment(UserAccount admin, String id, String reason) {
         Appointment a = appts.findById(id).orElseThrow(() -> ApiException.notFound("Không tìm thấy lịch hẹn."));
@@ -185,7 +196,7 @@ public class AdminService {
         appts.save(a);
         notifs.push(a.getUserId(), "booking", "Phòng khám đã hủy lịch hẹn",
                 a.getServiceName() + ", mã " + a.getId() + ", lúc " + time(a.getStartMin()) + " ngày "
-                        + a.getDate().format(DATE_VN) + ". Lý do: " + reason.trim());
+                + a.getDate().format(DATE_VN) + ". Lý do: " + reason.trim());
         audit.log(admin.getEmail(), "HUY_LICH", a.getId(), "Lý do: " + reason.trim());
     }
 
@@ -195,16 +206,15 @@ public class AdminService {
         if (a.getStatus() != ApptStatus.UPCOMING) {
             throw ApiException.bad("Chỉ hoàn thành được lịch đang ở trạng thái sắp tới.");
         }
-                      a.setStatus(ApptStatus.DONE);
+        a.setStatus(ApptStatus.DONE);
         appts.save(a);
         notifs.push(a.getUserId(), "booking", "Lịch hẹn đã hoàn thành",
                 a.getServiceName() + ", mã " + a.getId() + ", ngày " + a.getDate().format(DATE_VN)
-                        + ". Cảm ơn bạn đã đến khám. Vào Lịch hẹn, mục Đã khám để đánh giá dịch vụ.");
+                + ". Cảm ơn bạn đã đến khám. Vào Lịch hẹn, mục Đã khám để đánh giá dịch vụ.");
         audit.log(admin.getEmail(), "HOAN_THANH_LICH", a.getId(), null);
     }
 
     // ---------- Thống kê ----------
-
     @Transactional(readOnly = true)
     public StatsRes stats() {
         LocalDateTime now = LocalDateTime.now(AppointmentService.ZONE);
@@ -213,9 +223,12 @@ public class AdminService {
         long cancelled = 0;
         for (Appointment a : appts.findAll()) {
             switch (effStatus(a, now)) {
-                case "upcoming" -> up++;
-                case "done" -> done++;
-                default -> cancelled++;
+                case "upcoming" ->
+                    up++;
+                case "done" ->
+                    done++;
+                default ->
+                    cancelled++;
             }
         }
         LocalDate today = now.toLocalDate();
@@ -230,7 +243,6 @@ public class AdminService {
     }
 
     // ---------- Hàm dùng chung ----------
-
     private UserAccount customerOf(Long id) {
         UserAccount u = users.findById(id).orElseThrow(() -> ApiException.notFound("Không tìm thấy khách hàng."));
         if (u.getRole() != Role.CUSTOMER) {
@@ -247,7 +259,9 @@ public class AdminService {
         return a.getStatus().name().toLowerCase(Locale.ROOT);
     }
 
-    /** Che số điện thoại: giữ 2 số đầu và 3 số cuối. */
+    /**
+     * Che số điện thoại: giữ 2 số đầu và 3 số cuối.
+     */
     static String mask(String phone) {
         if (phone == null || phone.isBlank()) {
             return "";

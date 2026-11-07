@@ -18,6 +18,26 @@ const toUser = (d) => ({
 // Giữ lại dữ liệu tạm khi chỉ cập nhật hồ sơ
 const keepExtras = (u, d) => ({ ...toUser(d), appts: u.appts, notifs: u.notifs, tickets: u.tickets })
 const fail = (e) => ({ ok: false, status: e.status, error: e.message || 'Có lỗi xảy ra, vui lòng thử lại.' })
+// Bản sao danh sách lịch hẹn trong localStorage: chỉ dùng khi không tải được từ máy chủ.
+// Không lưu họ tên, số điện thoại, ghi chú (dữ liệu nhạy cảm). Xóa khi đăng xuất.
+const APPT_CACHE = 'hengio.appts.v1'
+const stripAppt = ({ note, contactName, contactPhone, ratingComment, ...rest }) => rest // eslint-disable-line no-unused-vars
+const saveApptCache = (uid, list) => {
+  try {
+    localStorage.setItem(APPT_CACHE, JSON.stringify({ uid, list: list.map(stripAppt) }))
+  } catch (e) {
+    /* bỏ qua */
+  }
+}
+const readApptCache = (uid) => {
+  try {
+    const c = JSON.parse(localStorage.getItem(APPT_CACHE))
+    return c && c.uid === uid && Array.isArray(c.list) ? c.list : []
+  } catch (e) {
+    return []
+  }
+}
+
 export function AuthProvider({ children }) {
   const [token, setTok] = useState(getToken)
   const [user, setUser] = useState(null)
@@ -56,15 +76,18 @@ export function AuthProvider({ children }) {
 
   // Nạp lịch hẹn, thông báo và yêu cầu hỗ trợ từ backend
   const refreshExtras = useCallback(async () => {
-    try {
+        try {
       const [appts, notifs, tickets] = await Promise.all([
         api('/api/appointments'),
         api('/api/notifications'),
         api('/api/tickets'),
       ])
+      if (userRef.current) saveApptCache(userRef.current.id, appts)
       setUser((u) => (u ? { ...u, appts, notifs, tickets } : u))
     } catch (e) {
-      /* lỗi mạng thì giữ dữ liệu cũ */
+      // Lỗi mạng: nếu chưa có dữ liệu thì dùng bản sao trong localStorage
+      const uid = userRef.current && userRef.current.id
+      if (uid) setUser((u) => (u && u.appts.length === 0 ? { ...u, appts: readApptCache(uid) } : u))
     }
   }, [])
 
@@ -77,7 +100,12 @@ export function AuthProvider({ children }) {
     return () => clearInterval(timer)
   }, [uid, refreshExtras])
 
-  const signOut = useCallback(() => {
+   const signOut = useCallback(() => {
+    try {
+      localStorage.removeItem(APPT_CACHE)
+    } catch (e) {
+      /* bỏ qua */
+    }
     setToken(null)
     setTok(null)
     setUser(null)

@@ -183,6 +183,8 @@ public class AppointmentService {
         Combo c = combo(r.svc());
         LocalDate date = parseDate(r.date());
         int m = parseTime(r.time());
+        String contactName = contactName(r.contactName());
+        String contactPhone = contactPhone(r.contactPhone());
         requireSlot(c.dur(), date, m);
         if (userBusy(userId, date, m, c.dur(), null)) {
             throw ApiException.conflict("Bạn đã có lịch khác trùng giờ này.");
@@ -209,6 +211,8 @@ public class AppointmentService {
         a.setCode(code);
         a.setTotal(c.price() - d);
         a.setNote(r.note() == null || r.note().isBlank() ? null : r.note().trim());
+        a.setContactName(contactName);
+        a.setContactPhone(contactPhone);
         appts.save(a);
         tell(a, "Đặt lịch thành công");
         return toDto(a);
@@ -415,10 +419,7 @@ public class AppointmentService {
         }
     }
 
-    /**
-     * Gửi thông báo cho khách về lịch hẹn vừa thay đổi.
-     */
-       /** Gửi thông báo trong app và email cho khách về lịch hẹn vừa thay đổi. */
+    /** Gửi thông báo trong app và email cho khách về lịch hẹn vừa thay đổi. */
     private void tell(Appointment a, String title) {
         String when = fmtTime(a.getStartMin()) + " ngày " + a.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
         notifs.push(a.getUserId(), "booking", title, a.getServiceName() + ", mã " + a.getId() + ", lúc " + when + ".");
@@ -447,6 +448,30 @@ public class AppointmentService {
             id = "HG-" + (1000 + random.nextInt(9000));
         } while (appts.existsById(id));
         return id;
+    }
+
+    /** Họ tên người đặt. Trống thì dùng thông tin tài khoản (giao diện thì bắt buộc nhập). */
+    private static String contactName(String s) {
+        if (s == null || s.isBlank()) {
+            return null;
+        }
+        String n = s.trim().replaceAll("\\s+", " ");
+        if (n.length() < 2 || n.length() > 100) {
+            throw ApiException.bad("Họ tên phải từ 2 đến 100 ký tự.");
+        }
+        return n;
+    }
+
+    /** Số điện thoại Việt Nam: 0xxxxxxxxx hoặc +84xxxxxxxxx. */
+    private static String contactPhone(String s) {
+        if (s == null || s.isBlank()) {
+            return null;
+        }
+        String p = s.replaceAll("[\\s.-]", "");
+        if (!p.matches("(\\+84|0)\\d{9,10}")) {
+            throw ApiException.bad("Số điện thoại không hợp lệ. Ví dụ: 0901234567.");
+        }
+        return p;
     }
 
     private static LocalDate parseDate(String s) {
@@ -479,6 +504,6 @@ public class AppointmentService {
         return new ApptDto(a.getId(), a.getServiceKey(), a.getServiceName(), a.getStaffId(), a.getDate().toString(),
                 fmtTime(a.getStartMin()), a.getDurationMin(), a.getStatus().name().toLowerCase(Locale.ROOT),
                 a.getDiscount(), a.getCode(), a.getTotal(), a.getNote(), a.getRating(), a.getRatingComment(),
-                a.getCancelReason());
+                a.getCancelReason(), a.getContactName(), a.getContactPhone());
     }
 }

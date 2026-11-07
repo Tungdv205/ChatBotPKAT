@@ -10,6 +10,8 @@ import { svcById } from '../utils/appointments.js'
 import { calcDiscount, currentTotals } from '../utils/booking.js'
 
 const STEPS = ['Dịch vụ', 'Ngày giờ', 'Xác nhận']
+const PHONE_RE = /^(\+84|0)\d{9,10}$/
+const cleanPhone = (s) => (s || '').replace(/[\s.-]/g, '')
 
 const EMPTY = {
   step: 1,
@@ -22,6 +24,9 @@ const EMPTY = {
   code: '',
   codeInput: '',
   codeErr: '',
+  contactName: '',
+  contactPhone: '',
+  contactErr: '',
   editId: null,
 }
 
@@ -29,7 +34,13 @@ const EMPTY = {
 export default function Booking({ app, preset }) {
   const { user, createAppt, rescheduleAppt } = useAuth()
   const toast = useToast()
-  const [b, setB] = useState(() => ({ ...EMPTY, ...(preset || {}), staff: 'any' })) // luôn tự xếp bác sĩ, khách không chọn
+  const [b, setB] = useState(() => ({
+    ...EMPTY,
+    contactName: user.name || '',
+    contactPhone: user.phone || '',
+    ...(preset || {}),
+    staff: 'any', // luôn tự xếp bác sĩ, khách không chọn
+  }))
   const set = (patch) => setB((s) => ({ ...s, ...patch }))
   const [busy, setBusy] = useState(false)
 
@@ -69,6 +80,8 @@ export default function Booking({ app, preset }) {
           time: b.time,
           code: currentTotals(user.appts, b, svc).code || '',
           note: b.note.trim(),
+          contactName: b.contactName.trim(),
+          contactPhone: cleanPhone(b.contactPhone),
         })
     setBusy(false)
     if (!r.ok) {
@@ -94,7 +107,11 @@ export default function Booking({ app, preset }) {
       return set(patch)
     }
     if (step === 3) {
-      if (!user.phone) return toast('Hãy thêm số điện thoại trong Hồ sơ trước khi xác nhận.')
+      if (!b.editId) {
+        if (b.contactName.trim().length < 2) return set({ contactErr: 'Vui lòng nhập họ và tên (ít nhất 2 ký tự).' })
+        if (!PHONE_RE.test(cleanPhone(b.contactPhone))) return set({ contactErr: 'Số điện thoại chưa đúng. Ví dụ: 0901234567.' })
+        set({ contactErr: '' })
+      }
       confirm()
     }
   }

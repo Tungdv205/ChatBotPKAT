@@ -3,8 +3,8 @@ import { staffById } from '../../utils/appointments.js'
 import { calcDiscount, currentTotals } from '../../utils/booking.js'
 import { longDate, vnd } from '../../utils/helpers.js'
 
-// Bước 4: kiểm tra thông tin, nhập mã ưu đãi, ghi chú cho bác sĩ
-export default function Step4Confirm({ svc, b, set, user, onGoProfile }) {
+// Bước 4: kiểm tra thông tin, nhập họ tên và số điện thoại liên hệ, nhập mã ưu đãi, ghi chú cho bác sĩ
+export default function Step4Confirm({ svc, b, set, user }) {
   const t = currentTotals(user.appts, b, svc)
   // Khách không chọn bác sĩ: phòng khám tự xếp bác sĩ rảnh khi xác nhận
   const st = b.staff !== 'any' ? staffById(b.staff) : null
@@ -41,14 +41,16 @@ export default function Step4Confirm({ svc, b, set, user, onGoProfile }) {
               {longDate(b.date)}
             </dd>
           </div>
-          <div>
-            <dt>Người đặt</dt>
-            <dd>
-              {user.name}
-              <br />
-              {user.phone || 'Chưa có số điện thoại'}
-            </dd>
-          </div>
+          {b.editId && (
+            <div>
+              <dt>Người đặt</dt>
+              <dd>
+                {user.name}
+                <br />
+                {user.phone || 'Chưa có số điện thoại'}
+              </dd>
+            </div>
+          )}
           <div>
             <dt>Giá dịch vụ</dt>
             <dd className="price">{vnd(svc.price)}</dd>
@@ -64,13 +66,39 @@ export default function Step4Confirm({ svc, b, set, user, onGoProfile }) {
             <dd>{vnd(t.total)}</dd>
           </div>
         </dl>
-        {!user.phone && (
-          <p className="err" style={{ margin: 0 }}>
-            Hồ sơ chưa có số điện thoại.{' '}
-            <button className="link" onClick={onGoProfile}>Cập nhật hồ sơ</button>
-          </p>
-        )}
       </div>
+
+      {/* Đặt mới thì nhập họ tên và số điện thoại liên hệ (điền sẵn từ tài khoản, sửa được) */}
+      {!b.editId && (
+        <div className="card" style={{ display: 'grid', gap: 10 }}>
+          <h2 style={{ fontSize: 18 }}>Thông tin liên hệ</h2>
+          <div className="field" style={{ margin: 0 }}>
+            <label htmlFor="cname">Họ và tên</label>
+            <input
+              id="cname"
+              type="text"
+              maxLength={100}
+              autoComplete="name"
+              value={b.contactName}
+              onChange={(e) => set({ contactName: e.target.value, contactErr: '' })}
+            />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label htmlFor="cphone">Số điện thoại</label>
+            <input
+              id="cphone"
+              type="tel"
+              inputMode="tel"
+              maxLength={15}
+              autoComplete="tel"
+              placeholder="Ví dụ: 0901234567"
+              value={b.contactPhone}
+              onChange={(e) => set({ contactPhone: e.target.value, contactErr: '' })}
+            />
+          </div>
+          {b.contactErr && <p className="err" role="alert" style={{ margin: 0 }}>{b.contactErr}</p>}
+        </div>
+      )}
 
       {/* Đổi lịch thì giữ mã cũ, không cho nhập mã mới */}
       {!b.editId && (

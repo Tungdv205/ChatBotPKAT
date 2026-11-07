@@ -13,11 +13,14 @@ import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import vn.anhthu.hengio.crypto.EncryptedStringConverter;
 
-/** Một lịch hẹn khám. Giá và thời lượng được lưu lại tại thời điểm đặt, nên đổi giá dịch vụ sau này không ảnh hưởng lịch cũ. */
+/**
+ * Một lịch hẹn khám. Giá và thời lượng được lưu lại tại thời điểm đặt, nên đổi
+ * giá dịch vụ sau này không ảnh hưởng lịch cũ.
+ */
 @Entity
 @Table(name = "appointments", indexes = {
-        @Index(name = "ix_appt_user", columnList = "user_id"),
-        @Index(name = "ix_appt_staff_date", columnList = "staff_id,date")
+    @Index(name = "ix_appt_user", columnList = "user_id"),
+    @Index(name = "ix_appt_staff_date", columnList = "staff_id,date")
 })
 public class Appointment {
 
@@ -28,7 +31,9 @@ public class Appointment {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    /** Mã dịch vụ, nhiều dịch vụ nối bằng dấu + (ví dụ s1+s12). */
+    /**
+     * Mã dịch vụ, nhiều dịch vụ nối bằng dấu + (ví dụ s1+s12).
+     */
     @Column(name = "service_key", nullable = false, length = 100)
     private String serviceKey;
 
@@ -58,10 +63,18 @@ public class Appointment {
     @Column(nullable = false, length = 20)
     private ApptStatus status = ApptStatus.UPCOMING;
 
-    /** Ghi chú triệu chứng của khách: mã hóa trong database. */
+    /**
+     * Ghi chú triệu chứng của khách: mã hóa trong database.
+     */
     @Convert(converter = EncryptedStringConverter.class)
     @Column(length = 3000)
     private String note;
+    @Column(name = "contact_name", length = 100)
+    private String contactName;
+
+    @Convert(converter = EncryptedStringConverter.class)
+    @Column(name = "contact_phone", length = 300)
+    private String contactPhone;
 
     private Integer rating;
 
@@ -208,5 +221,20 @@ public class Appointment {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+        public String getContactName() {
+        return contactName;
+    }
+
+    public void setContactName(String contactName) {
+        this.contactName = contactName;
+    }
+
+    public String getContactPhone() {
+        return contactPhone;
+    }
+
+    public void setContactPhone(String contactPhone) {
+        this.contactPhone = contactPhone;
     }
 }
