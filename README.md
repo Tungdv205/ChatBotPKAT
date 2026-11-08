@@ -8,7 +8,7 @@
 | Tên đội thi | DoubleT |
 | Bảng thi | Bảng A |
 | Đề bài bốc thăm | Đề số 4 — Chatbot FAQ & đặt lịch tư vấn |
-| Demo online | https://chat-bot-pkat.vercel.app (quản trị: https://chat-bot-pkat.vercel.app/admin) |
+| Demo online | https://chat-bot-pkat.vercel.app (quản trị: https://chat-bot-pkat.vercel.app/admin) Tài khoản demo ở mục 7|
 | Source ZIP và Video demo online| https://drive.google.com/drive/folders/1SkDa8Uqh6aJNQfWZp036cQhHDzJS1BBi?usp=sharing |
 | Minh chứng dùng AI | Mục 10 của README này |
 | Bảng kiểm thử | Mục 11 của README này |
