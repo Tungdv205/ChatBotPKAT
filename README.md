@@ -91,11 +91,21 @@ Nếu thiếu `AI_API_KEY` hoặc `MAIL_SCRIPT_URL`, ứng dụng vẫn chạy: 
 ```text
 ChatBotFAQ/
 ├── index.html
-├── src/                 # giao diện React (components, pages, context, api, data)
-├── public/              # tài nguyên tĩnh
-├── backend/
-│   ├── src/main/java/…  # controller, service, repo, model, security, config
-│   └── .env.example     # mẫu biến môi trường (không có giá trị thật)
+├── package.json          # phụ thuộc và lệnh chạy giao diện
+├── vite.config.js
+├── vercel.json           # cấu hình triển khai giao diện
+├── src/                  # giao diện React
+│   ├── components/       # chatbot, form đặt lịch, thẻ dịch vụ...
+│   ├── pages/            # trang khách: trang chủ, đặt lịch, lịch hẹn, hỗ trợ...
+│   ├── admin/            # trang quản trị: lịch hẹn, khách hàng, doanh thu...
+│   ├── context/          # trạng thái đăng nhập, dữ liệu dùng chung
+│   ├── api/              # gọi backend
+│   ├── data/, utils/, styles/
+├── backend/              # Spring Boot (API, chatbot AI, cơ sở dữ liệu)
+│   ├── src/main/java/    # controller, service, repo, model, security, config
+│   ├── src/main/resources/  # cấu hình và dữ liệu mẫu
+│   ├── pom.xml, Dockerfile
+│   └── .env.example      # mẫu biến môi trường (không có giá trị thật)
 └── README.md
 ```
 
@@ -104,9 +114,10 @@ ChatBotFAQ/
 - **Khách hàng:** tự đăng ký, đăng nhập, dùng chatbot, đặt/đổi/hủy lịch, xem thông báo.
 - **Quản trị:** vào `/admin`, xem và xử lý danh sách lịch hẹn (hủy, đánh dấu đã khám, xóa lịch đã xử lý), xem doanh thu, quản lý dịch vụ, ưu đãi, khách hàng, bác sĩ, yêu cầu hỗ trợ.
 - **Tài khoản demo để chấm bài** (tạo riêng cho cuộc thi, dùng xong sẽ xóa):
-   - Khách: email `giamkhao@example.com`, mật khẩu `testgiamkhao123@`
-  - Quản trị: email `admin.demo@example.com`, mật khẩu `admin123@`
+- Khách: email `giamkhao@example.com`, mật khẩu `testgiamkhao123@`
+- Quản trị: email `admin.demo@example.com`, mật khẩu `admin123@`
 - Bảo mật cơ bản: mật khẩu băm BCrypt, JWT, thông tin liên hệ mã hóa AES trong cơ sở dữ liệu, giới hạn tốc độ đăng nhập, CORS theo danh sách cho phép.
+- Muốn chạy backend bằng khóa riêng: sao chép tên biến trong `backend/.env.example`, đặt `AI_API_KEY` bằng khóa Gemini của bạn. Không có khóa vẫn chạy, chatbot dùng câu trả lời có sẵn.
 
 ## 8. Giới hạn hiện tại
 
@@ -155,5 +166,5 @@ Bảng A: ít nhất 6 ca, gồm 2 bình thường, 2 đầu vào không hợp l
 
 - Source ZIP chứa mã nguồn và README này; chỉ kèm cấu hình mẫu (`.env.example`), không có `node_modules`, `target`, `.env`, `backend.log`.
 - Video tối đa 2 phút thể hiện thao tác thực tế và đủ 5 tính năng.
-- Minh chứng dùng AI và bảng kiểm thử nằm trong README này (mục 10, 11)
+- Minh chứng dùng AI: file `MinhChungSuDungAI.docx` trong thư mục Drive (tóm tắt ở mục 10). Bảng kiểm thử nằm ở mục 11.
 - Tài khoản demo ghi ở mục 7.
