@@ -87,7 +87,7 @@ function Chart({ rows, mode }) {
             height={H - bottom - y(r.total)}
             rx="4"
             fill="var(--accent)"
-            opacity={i === n - 1 ? 1 : 0.45}
+            opacity={0.9}
           />
           {r.total > 0 && n <= 14 && (
             <text x={cx(i)} y={y(r.total) - 6} textAnchor="middle" fontSize="11" fill="var(--muted)">
