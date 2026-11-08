@@ -29,10 +29,14 @@ import vn.anhthu.hengio.web.dto.AdminDtos.LockReq;
 import vn.anhthu.hengio.web.dto.AdminDtos.PageRes;
 import vn.anhthu.hengio.web.dto.AdminDtos.StatsRes;
 
-/** API quản trị. Cấu hình bảo mật chỉ cho tài khoản có vai trò ADMIN vào /api/admin/**. */
+/**
+ * API quản trị. Cấu hình bảo mật chỉ cho tài khoản có vai trò ADMIN vào
+ * /api/admin/**.
+ */
 @RestController
 @RequestMapping("/api/admin")
 public class AdminController {
+
     private static final Map<String, String> OK = Map.of("message", "ok");
 
     private final AdminService admin;
@@ -45,8 +49,8 @@ public class AdminController {
 
     @GetMapping("/customers")
     public PageRes<CustomerRow> customers(@RequestParam(required = false) String q,
-                                          @RequestParam(defaultValue = "0") int page,
-                                          @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
         return admin.customers(q, page, size);
     }
 
@@ -57,35 +61,35 @@ public class AdminController {
 
     @PutMapping("/customers/{id}")
     public Map<String, String> edit(@AuthenticationPrincipal UserAccount me, @PathVariable Long id,
-                                    @Valid @RequestBody CustomerEditReq r) {
+            @Valid @RequestBody CustomerEditReq r) {
         admin.editCustomer(me, id, r);
         return OK;
     }
 
     @PostMapping("/customers/{id}/lock")
     public Map<String, String> lock(@AuthenticationPrincipal UserAccount me, @PathVariable Long id,
-                                    @RequestBody LockReq r) {
+            @RequestBody LockReq r) {
         admin.lock(me, id, r.locked());
         return OK;
     }
 
     @DeleteMapping("/customers/{id}")
     public Map<String, String> delete(@AuthenticationPrincipal UserAccount me, @PathVariable Long id,
-                                      @Valid @RequestBody ConfirmReq r) {
+            @Valid @RequestBody ConfirmReq r) {
         admin.deleteCustomer(me, id, r.password());
         return OK;
     }
 
     @GetMapping("/appointments")
     public List<AdminApptDto> appointments(@RequestParam(required = false) String status,
-                                           @RequestParam(required = false) String date,
-                                           @RequestParam(required = false) String q) {
+            @RequestParam(required = false) String date,
+            @RequestParam(required = false) String q) {
         return admin.appointments(status, date, q);
     }
 
     @PostMapping("/appointments/{id}/cancel")
     public Map<String, String> cancel(@AuthenticationPrincipal UserAccount me, @PathVariable String id,
-                                      @Valid @RequestBody CancelReasonReq r) {
+            @Valid @RequestBody CancelReasonReq r) {
         admin.cancelAppointment(me, id, r.reason());
         return OK;
     }
@@ -95,11 +99,13 @@ public class AdminController {
         admin.completeAppointment(me, id);
         return OK;
     }
+
     @DeleteMapping("/appointments/{id}")
     public Map<String, String> deleteAppointment(@AuthenticationPrincipal UserAccount me, @PathVariable String id) {
         admin.deleteAppointment(me, id);
         return OK;
     }
+
     @GetMapping("/stats")
     public StatsRes stats() {
         return admin.stats();

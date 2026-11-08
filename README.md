@@ -107,9 +107,7 @@ ChatBotFAQ/
 - **Khách hàng:** tự đăng ký, đăng nhập, dùng chatbot, đặt/đổi/hủy lịch, xem thông báo.
 - **Quản trị:** vào `/admin`, xem và xử lý danh sách lịch hẹn (hủy, đánh dấu đã khám, xóa lịch đã xử lý), xem doanh thu, quản lý dịch vụ, ưu đãi, khách hàng, bác sĩ, yêu cầu hỗ trợ.
 - **Tài khoản demo để chấm bài** (tạo riêng cho cuộc thi, dùng xong sẽ xóa):
-
   - Khách: user: `giamkhao@example.com` / password: `<testgiamkhao123@>`
-
   - Quản trị: tk: `admin.demo@example.com` /passwork: `admin123@`
 - Bảo mật cơ bản: mật khẩu băm BCrypt, JWT, thông tin liên hệ mã hóa AES trong cơ sở dữ liệu, giới hạn tốc độ đăng nhập, CORS theo danh sách cho phép.
 

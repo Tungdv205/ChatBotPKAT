@@ -182,7 +182,7 @@ export function AdminProvider({ children }) {
     },
     [adm, refreshAppts, refreshStats]
   )
-    const deleteAppt = useCallback(
+  const deleteAppt = useCallback(
     async (id) => {
       try {
         await adm('/api/admin/appointments/' + id, { method: 'DELETE' })
@@ -310,7 +310,7 @@ export function AdminProvider({ children }) {
       staff,
       cancelAppt,
       doneAppt,
-       deleteAppt,
+      deleteAppt,
       replyTicket,
       saveService,
       saveVoucher,
