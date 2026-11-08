@@ -14,6 +14,19 @@ export default function Dashboard({ go }) {
   const todayCount = upcoming.filter((a) => a.date === today).length
   const revenue = done.reduce((s, a) => s + a.total, 0)
   const openTickets = stats ? stats.openTickets : 0
+  // Thẻ số liệu bấm được: chuyển tới màn tương ứng (cả bằng bàn phím)
+  const kpiNav = (view) => ({
+    role: 'button',
+    tabIndex: 0,
+    onClick: () => go(view),
+    onKeyDown: (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        go(view)
+      }
+    },
+    style: { cursor: 'pointer' },
+  })
 
   // 7 ngày tới (kể cả hôm nay)
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -49,28 +62,34 @@ export default function Dashboard({ go }) {
         </div>
       </div>
 
-      <div className="kpis">
-        <div className="card kpi">
+           <div className="kpis">
+        <div className="card kpi" {...kpiNav('appts')}>
           <small>Lịch hôm nay</small>
           <b>{todayCount}</b>
           <span>Còn chờ đến khám hôm nay</span>
         </div>
-        <div className="card kpi">
+        <div className="card kpi" {...kpiNav('appts')}>
           <small>Lịch sắp tới</small>
           <b>{upcoming.length}</b>
           <span>Đang chờ đến khám</span>
         </div>
-        <div className="card kpi">
+        <div className="card kpi" {...kpiNav('appts')}>
           <small>Doanh thu đã khám</small>
           <b>{vnd(revenue)}</b>
           <span>{done.length} lượt hoàn thành</span>
         </div>
-        <div className="card kpi">
+        <div className="card kpi" {...kpiNav('customers')}>
           <small>Khách hàng</small>
           <b>{stats ? stats.customers : 0}</b>
           <span>
             {openTickets ? (
-              <button className="link" onClick={() => go('tickets')}>
+              <button
+                className="link"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  go('tickets')
+                }}
+              >
                 {openTickets} yêu cầu hỗ trợ chờ xử lý
               </button>
             ) : (
