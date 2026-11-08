@@ -9,20 +9,17 @@
 | Bảng thi | Bảng A |
 | Đề bài bốc thăm | Đề số 4 — Chatbot FAQ & đặt lịch tư vấn |
 | Demo online | https://chat-bot-pkat.vercel.app (quản trị: https://chat-bot-pkat.vercel.app/admin) |
-| Video demo (≤ 02 phút) | `<URL>` |
-| Source ZIP | `<URL tải gói mã nguồn ZIP>` |
+| Source ZIP và Video demo online| https://drive.google.com/drive/folders/1SkDa8Uqh6aJNQfWZp036cQhHDzJS1BBi?usp=sharing |
 | Minh chứng dùng AI | Mục 10 của README này |
 | Bảng kiểm thử | Mục 11 của README này |
 
-> Tiêu chí vòng loại: https://vibecoding.info.vn/tieu-chi-cham-thi
-> Không đưa khóa API hoặc mật khẩu vào bài nộp. Backend online chạy trên gói miễn phí; nếu mở lần đầu hơi chậm thì chờ vài giây.
 
 ## 2. Tính năng chính
 
 1. **Khung chat FAQ (08–10 câu hỏi thường gặp):** giờ làm việc, đặt/đổi/hủy lịch, ưu đãi, giá dịch vụ, giấy tờ cần mang, nhịn ăn trước xét nghiệm, liên hệ nhân viên... lấy từ bộ dữ liệu mẫu của đội (dịch vụ, bác sĩ, ưu đãi).
 2. **AI diễn đạt lại và gợi ý 03 câu hỏi liên quan** sau mỗi lượt trả lời (Gemini, trả về JSON gồm câu trả lời và đúng 3 gợi ý; bấm vào gợi ý là gửi luôn).
 3. **Khi không trả lời được, chatbot chủ động đề xuất đặt lịch tư vấn với nhân viên** (nút "Đặt lịch tư vấn" và "Gặp nhân viên").
-4. **Form đặt lịch:** chọn dịch vụ, bác sĩ, ngày/giờ (kiểm tra giờ làm việc, nghỉ trưa, trùng giờ), mã ưu đãi; tài khoản có họ tên và số điện thoại;danh sách lịch hẹn lưu trong cơ sở dữ liệu (kèm bản sao trong localStorage)
+4. **Form đặt lịch:** chọn dịch vụ, bác sĩ, ngày/giờ (kiểm tra giờ làm việc, nghỉ trưa, trùng giờ), mã ưu đãi; có họ tên và số điện thoại liên hệ; danh sách lịch hẹn lưu trong cơ sở dữ liệu (kèm bản sao trong localStorage); gửi thông báo trong ứng dụng và email xác nhận.
 5. **Trang quản trị `/admin`:** xem danh sách lịch hẹn đã đặt, xử lý và xóa lịch đã xử lý. Lịch sắp tới phải hủy trước; chỉ lịch đã khám hoặc đã hủy mới xóa được, có bước xác nhận.
 
 Tính năng bổ sung: đăng ký/đăng nhập (JWT, nhớ đăng nhập), thông báo chào mừng và mã `CHAOMUNG` (giảm 20% cho lần đặt đầu tiên), đổi/hủy lịch trước giờ hẹn ít nhất 2 giờ, đánh giá sau khi khám.  Trang quản trị có chuông thông báo việc cần xử lý, thẻ số liệu bấm được và trang doanh thu theo ngày, tuần, tháng.
@@ -107,8 +104,8 @@ ChatBotFAQ/
 - **Khách hàng:** tự đăng ký, đăng nhập, dùng chatbot, đặt/đổi/hủy lịch, xem thông báo.
 - **Quản trị:** vào `/admin`, xem và xử lý danh sách lịch hẹn (hủy, đánh dấu đã khám, xóa lịch đã xử lý), xem doanh thu, quản lý dịch vụ, ưu đãi, khách hàng, bác sĩ, yêu cầu hỗ trợ.
 - **Tài khoản demo để chấm bài** (tạo riêng cho cuộc thi, dùng xong sẽ xóa):
-  - Khách: user: `giamkhao@example.com` / password: `<testgiamkhao123@>`
-  - Quản trị: tk: `admin.demo@example.com` /passwork: `admin123@`
+   - Khách: email `giamkhao@example.com`, mật khẩu `testgiamkhao123@`
+  - Quản trị: email `admin.demo@example.com`, mật khẩu `admin123@`
 - Bảo mật cơ bản: mật khẩu băm BCrypt, JWT, thông tin liên hệ mã hóa AES trong cơ sở dữ liệu, giới hạn tốc độ đăng nhập, CORS theo danh sách cho phép.
 
 ## 8. Giới hạn hiện tại
@@ -118,6 +115,7 @@ ChatBotFAQ/
 - Email xác nhận gửi qua Gmail có thể vào hòm thư Spam ở lần đầu.
 - Số điện thoại chưa chặn trùng giữa các tài khoản (email đã chặn trùng).
 - Chatbot chỉ tư vấn thông tin dịch vụ, không thay thế bác sĩ.
+- Kiểm thử thực hiện thủ công trên bản triển khai (chưa có bộ kiểm thử tự động).
 
 ## 9. Nguồn tham khảo
 
@@ -126,7 +124,7 @@ ChatBotFAQ/
 - Tài liệu Spring Boot, React, Google Gemini API
 
 ## 10. Minh chứng dùng AI để xây dựng sản phẩm
-
+Dùng ChatGPT để phân tích và triển khai nghiệp vụ theo yêu cầu
 Dùng Claude (Claude Code) để thiết kế, viết mã và rà soát. Mỗi vòng ghi theo trình tự: mục tiêu → yêu cầu cho AI → vấn đề phát hiện khi thử → yêu cầu sửa → kết quả kiểm tra lại. Các vòng thử và cải thiện tiêu biểu:
 
 1. **Khóa API bị lỗi khi gọi Gemini.** Thử thấy backend ghi "invalid header value". Yêu cầu AI tìm nguyên nhân; kết quả: khóa chứa khoảng trắng, sửa bằng cách cắt khoảng trắng ở code và biến môi trường, kiểm tra lại gọi thành công (2,08 giây lần đầu, 0,004 giây khi có bộ nhớ đệm).
@@ -134,7 +132,7 @@ Dùng Claude (Claude Code) để thiết kế, viết mã và rà soát. Mỗi v
 3. **Đối chiếu với đề bài.** Yêu cầu AI so sánh sản phẩm với 5 yêu cầu; phát hiện thiếu "3 câu hỏi gợi ý sau mỗi lượt" và "đề xuất đặt lịch tư vấn khi không trả lời được". Yêu cầu sửa; kết quả: đầu ra AI theo lược đồ JSON, giao diện hiển thị 3 gợi ý và nút đặt lịch tư vấn; đã thử lại.
 4. **Kiểm thử.** Yêu cầu AI đề xuất bộ ca thử theo ba nhóm (bình thường, không hợp lệ, biên) và các tình huống sự cố của chatbot; kết quả: bảng ở mục 11, đã chạy thủ công trên bản triển khai.
 
-Ảnh chụp đoạn hội thoại chọn lọc (tối đa 5): `<tên tệp trong thư mục docs/minh-chung-ai/>`
+Ảnh chụp đoạn hội thoại chọn lọc (tối đa 5): (đã để cả trong driver)
 
 ## 11. Bảng kiểm thử
 
@@ -157,6 +155,5 @@ Bảng A: ít nhất 6 ca, gồm 2 bình thường, 2 đầu vào không hợp l
 
 - Source ZIP chứa mã nguồn và README này; chỉ kèm cấu hình mẫu (`.env.example`), không có `node_modules`, `target`, `.env`, `backend.log`.
 - Video tối đa 2 phút thể hiện thao tác thực tế và đủ 5 tính năng.
-- Minh chứng dùng AI và bảng kiểm thử nằm trong README này (mục 10, 11), ảnh chụp trong `docs/`.
+- Minh chứng dùng AI và bảng kiểm thử nằm trong README này (mục 10, 11)
 - Tài khoản demo ghi ở mục 7.
-- Bản nộp trước hạn là căn cứ chấm; không sửa tính năng sau hạn nộp.
