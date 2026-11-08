@@ -62,7 +62,7 @@ export default function Dashboard({ go }) {
         </div>
       </div>
 
-           <div className="kpis">
+      <div className="kpis">
         <div className="card kpi" {...kpiNav('appts')}>
           <small>Lịch hôm nay</small>
           <b>{todayCount}</b>
@@ -73,7 +73,7 @@ export default function Dashboard({ go }) {
           <b>{upcoming.length}</b>
           <span>Đang chờ đến khám</span>
         </div>
-        <div className="card kpi" {...kpiNav('appts')}>
+        <div className="card kpi" {...kpiNav('revenue')}>
           <small>Doanh thu đã khám</small>
           <b>{vnd(revenue)}</b>
           <span>{done.length} lượt hoàn thành</span>

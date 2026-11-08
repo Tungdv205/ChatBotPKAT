@@ -118,18 +118,27 @@ function Bell({ onNav }) {
   )
 }
 
-// Khung quản trị: thanh trên, menu bên trái (máy tính), dải menu cuộn ngang (điện thoại)
-export default function AdminShell({ view, onNav, children }) {
+// Khung quản trị: thanh trên (Quay lại, tìm kiếm, thông báo, đăng xuất), menu bên trái (máy tính),
+// dải menu cuộn ngang (điện thoại)
+export default function AdminShell({ view, onNav, canBack, onBack, onSearch, children }) {
   const { admin, logout } = useAdmin()
 
   return (
     <div className="shell">
       <header className="topbar">
         <div className="top-l">
+          {canBack && (
+            <button className="iconbtn" onClick={onBack} aria-label="Quay lại" title="Quay lại">
+              <Icon name="chevl" />
+            </button>
+          )}
           <Logo />
           <span className="pill pill-sun">Quản trị</span>
         </div>
         <div className="top-r">
+          <button className="iconbtn" onClick={onSearch} aria-label="Tìm kiếm" title="Tìm kiếm">
+            <Icon name="search" />
+          </button>
           <Bell onNav={onNav} />
           <button className="iconbtn" onClick={logout} aria-label="Đăng xuất" title="Đăng xuất">
             <Icon name="out" />

@@ -9,6 +9,7 @@ import AdminPromos from './pages/AdminPromos.jsx'
 import AdminCustomers from './pages/AdminCustomers.jsx'
 import AdminTickets from './pages/AdminTickets.jsx'
 import AdminStaff from './pages/AdminStaff.jsx'
+import AdminRevenue from './pages/AdminRevenue.jsx'
 
 // Gốc của trang quản trị
 export default function AdminApp() {
@@ -23,9 +24,9 @@ export default function AdminApp() {
       setStack([])
     }
   }, [admin])
-if (booting) return <div style={{ padding: 40, textAlign: 'center', color: '#667' }}>Đang tải...</div>
+
+  if (booting) return <div style={{ padding: 40, textAlign: 'center', color: '#667' }}>Đang tải...</div>
   if (!admin) return <AdminLogin />
-  
 
   const go = (v) => {
     if (v !== view) setStack((st) => [...st.slice(-19), view])
@@ -59,6 +60,7 @@ if (booting) return <div style={{ padding: 40, textAlign: 'center', color: '#667
       {view === 'customers' && <AdminCustomers />}
       {view === 'tickets' && <AdminTickets />}
       {view === 'staff' && <AdminStaff />}
+      {view === 'revenue' && <AdminRevenue go={go} />}
     </AdminShell>
   )
 }
